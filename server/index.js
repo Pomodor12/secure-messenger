@@ -329,11 +329,22 @@ io.on('connection', (socket) => {
   });
 });
 
+const fs = require('fs');
 const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-app.use(express.static(clientBuildPath));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
+const hasClientBuild = fs.existsSync(clientBuildPath);
+
+if (hasClientBuild) {
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+  console.log('Serving client build from:', clientBuildPath);
+} else {
+  console.log('No client build found at:', clientBuildPath);
+  app.get('*', (req, res) => {
+    res.json({ message: 'API is running. Client build not found.' });
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
