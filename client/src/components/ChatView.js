@@ -67,9 +67,9 @@ function SpeechBubble({ text, frame, isDark }) {
 
 function ReactionPicker({ onSelect, isDark }) {
   return (
-    <div className={`absolute bottom-full mb-1 left-0 z-20 flex gap-1 px-2 py-1.5 rounded-xl shadow-lg ${isDark ? 'bg-dark-800 border border-dark-700' : 'bg-white border border-gray-200'}`}>
+    <div className={`absolute bottom-full mb-1 left-0 z-20 flex gap-1 px-2 py-1.5 rounded-xl shadow-lg ${isDark ? 'bg-dark-800 border border-dark-700' : 'bg-white border border-gray-200'}`} onClick={(e) => e.stopPropagation()}>
       {QUICK_REACTIONS.map(emoji => (
-        <button key={emoji} onClick={() => onSelect(emoji)} className="text-lg hover:scale-125 transition-transform px-0.5">
+        <button key={emoji} onClick={(e) => { e.stopPropagation(); onSelect(emoji); }} className="text-lg hover:scale-125 transition-transform px-0.5">
           {emoji}
         </button>
       ))}
@@ -199,9 +199,9 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   useEffect(() => {
-    const handler = (e) => { if (reactionPickerMsgId && !e.target.closest('.reaction-picker')) setReactionPickerMsgId(null); };
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
+    const handler = (e) => { if (reactionPickerMsgId && !e.target.closest('.reaction-picker') && !e.target.closest('.reaction-toggle')) setReactionPickerMsgId(null); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, [reactionPickerMsgId]);
 
   const fetchPeerPublicKey = async (peerUserId) => {
@@ -373,13 +373,13 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                     {/* Reaction picker button */}
                     <div className={`absolute ${isOwn ? '-left-7' : '-right-7'} top-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity opacity-70`}>
                       <button
-                        onClick={() => setReactionPickerMsgId(reactionPickerMsgId === msg.id ? null : msg.id)}
-                        className={`p-1 rounded-full ${isDark ? 'hover:bg-dark-700 text-dark-400' : 'hover:bg-gray-200 text-gray-400'}`}
+                        className={`reaction-toggle p-1 rounded-full ${isDark ? 'hover:bg-dark-700 text-dark-400' : 'hover:bg-gray-200 text-gray-400'}`}
+                        onClick={(e) => { e.stopPropagation(); setReactionPickerMsgId(reactionPickerMsgId === msg.id ? null : msg.id); }}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       </button>
                       {reactionPickerMsgId === msg.id && (
-                        <div className="reaction-picker">
+                        <div className="reaction-picker reaction-toggle">
                           <ReactionPicker onSelect={(emoji) => handleReaction(msg.id, emoji)} isDark={isDark} />
                         </div>
                       )}

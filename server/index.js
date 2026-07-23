@@ -196,16 +196,22 @@ async function initDB() {
 
   // Migration: add reply_to and reactions if missing
   try {
-    await pool.query(`ALTER TABLE messages ADD COLUMN reply_to INTEGER REFERENCES messages(id) ON DELETE SET NULL`);
-    console.log('Added reply_to column');
+    const colCheck = await pool.query(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_name = 'messages' AND column_name IN ('reply_to', 'reactions')
+    `);
+    const existingCols = colCheck.rows.map(r => r.column_name);
+
+    if (!existingCols.includes('reply_to')) {
+      await pool.query(`ALTER TABLE messages ADD COLUMN reply_to INTEGER REFERENCES messages(id) ON DELETE SET NULL`);
+      console.log('Migration: added reply_to column');
+    }
+    if (!existingCols.includes('reactions')) {
+      await pool.query(`ALTER TABLE messages ADD COLUMN reactions TEXT DEFAULT '{}'`);
+      console.log('Migration: added reactions column');
+    }
   } catch (e) {
-    if (!e.message.includes('already exists')) console.error('Migration reply_to:', e.message);
-  }
-  try {
-    await pool.query(`ALTER TABLE messages ADD COLUMN reactions TEXT DEFAULT '{}'`);
-    console.log('Added reactions column');
-  } catch (e) {
-    if (!e.message.includes('already exists')) console.error('Migration reactions:', e.message);
+    console.error('Migration error:', e.message);
   }
 
   console.log('Database initialized');
