@@ -163,7 +163,15 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
     [req.user.id],
     (err, user) => {
       if (err) return res.status(500).json({ error: 'Database error' });
-      if (!user) return res.status(404).json({ error: 'User not found' });
+      if (!user) {
+        db.run('INSERT OR IGNORE INTO users (id, username) VALUES (?, ?)',
+          [req.user.id, req.user.username],
+          function(err) {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            res.json({ id: req.user.id, username: req.user.username, avatar: null, status: 'Hey, I am using Secure Messenger!' });
+          });
+        return;
+      }
       res.json(user);
     });
 });
