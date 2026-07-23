@@ -44,7 +44,9 @@ export default function UserProfile({ userId, onClose }) {
                 <AvatarUpload currentAvatar={profile.avatar} onAvatarChange={() => {}} size="xl" />
               ) : (
                 <div className="w-28 h-28 rounded-full overflow-hidden bg-primary-600 flex items-center justify-center">
-                  {profile.avatar ? (
+                  {profile.emoji ? (
+                    <span className="text-6xl">{profile.emoji}</span>
+                  ) : profile.avatar ? (
                     <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-white font-bold text-3xl">{profile.username?.charAt(0).toUpperCase()}</span>

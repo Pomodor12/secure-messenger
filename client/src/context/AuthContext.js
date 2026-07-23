@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_URL } from '../config';
+import { getOrCreateKeyPair } from '../utils/crypto';
 
 const AuthContext = createContext(null);
 
@@ -15,8 +16,10 @@ export function AuthProvider({ children }) {
       })
         .then(res => res.json())
         .then(data => {
-          if (data.id) setUser(data);
-          else { localStorage.removeItem('token'); setToken(null); }
+          if (data.id) {
+            setUser(data);
+            uploadPublicKey(token);
+          } else { localStorage.removeItem('token'); setToken(null); }
         })
         .catch(() => { localStorage.removeItem('token'); setToken(null); })
         .finally(() => setLoading(false));
@@ -24,6 +27,19 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, [token]);
+
+  const uploadPublicKey = async (authToken) => {
+    try {
+      const keyPair = await getOrCreateKeyPair();
+      await fetch(`${API_URL}/api/auth/public-key`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ publicKey: keyPair.publicKey })
+      });
+    } catch (e) {
+      console.error('Failed to upload public key:', e);
+    }
+  };
 
   const login = async (loginData, password) => {
     const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -36,6 +52,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', data.token);
     setToken(data.token);
     setUser(data.user);
+    await uploadPublicKey(data.token);
     return data;
   };
 
@@ -50,6 +67,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', data.token);
     setToken(data.token);
     setUser(data.user);
+    await uploadPublicKey(data.token);
     return data;
   };
 

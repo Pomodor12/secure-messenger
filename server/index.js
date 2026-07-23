@@ -47,7 +47,9 @@ db.serialize(() => {
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     avatar TEXT DEFAULT NULL,
-    status TEXT DEFAULT 'Hey, I am using Secure Messenger!',
+    emoji TEXT DEFAULT NULL,
+    public_key TEXT DEFAULT NULL,
+    status TEXT DEFAULT 'Привет, я использую Голуби!',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
@@ -92,6 +94,9 @@ db.serialize(() => {
     FOREIGN KEY (chat_id) REFERENCES chats(id)
   )`);
 });
+
+db.run("ALTER TABLE users ADD COLUMN emoji TEXT DEFAULT NULL", () => {});
+db.run("ALTER TABLE users ADD COLUMN public_key TEXT DEFAULT NULL", () => {});
 
 const onlineUsers = new Map();
 
@@ -186,9 +191,35 @@ app.put('/api/auth/profile', authenticateToken, (req, res) => {
     });
 });
 
+app.put('/api/auth/emoji', authenticateToken, (req, res) => {
+  const { emoji } = req.body;
+  if (!emoji || emoji.length > 10) return res.status(400).json({ error: 'Invalid emoji' });
+  db.run('UPDATE users SET emoji = ? WHERE id = ?', [emoji, req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json({ message: 'Emoji updated', emoji });
+  });
+});
+
+app.put('/api/auth/public-key', authenticateToken, (req, res) => {
+  const { publicKey } = req.body;
+  if (!publicKey) return res.status(400).json({ error: 'Public key required' });
+  db.run('UPDATE users SET public_key = ? WHERE id = ?', [publicKey, req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json({ message: 'Public key updated' });
+  });
+});
+
+app.get('/api/users/:id/public-key', authenticateToken, (req, res) => {
+  db.get('SELECT public_key FROM users WHERE id = ?', [req.params.id], (err, user) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ publicKey: user.public_key });
+  });
+});
+
 app.get('/api/users/search', authenticateToken, (req, res) => {
   const { q } = req.query;
-  db.all('SELECT id, username, avatar, status FROM users WHERE username LIKE ? AND id != ? LIMIT 20',
+  db.all('SELECT id, username, avatar, emoji, status FROM users WHERE username LIKE ? AND id != ? LIMIT 20',
     [`%${q}%`, req.user.id],
     (err, users) => {
       if (err) return res.status(500).json({ error: 'Database error' });
@@ -235,7 +266,7 @@ app.get('/api/chats/:chatId/messages', authenticateToken, (req, res) => {
   const { chatId } = req.params;
   const { before, limit = 50 } = req.query;
   let query = `
-    SELECT m.*, u.username, u.avatar
+    SELECT m.*, u.username, u.avatar, u.emoji
     FROM messages m
     JOIN users u ON m.user_id = u.id
     WHERE m.chat_id = ?
@@ -273,7 +304,7 @@ app.post('/api/chats/:chatId/members', authenticateToken, (req, res) => {
 
 app.get('/api/chats/:chatId/members', authenticateToken, (req, res) => {
   db.all(`
-    SELECT u.id, u.username, u.avatar, u.status
+    SELECT u.id, u.username, u.avatar, u.emoji, u.status
     FROM users u
     JOIN chat_members cm ON u.id = cm.user_id
     WHERE cm.chat_id = ?
@@ -410,12 +441,13 @@ io.on('connection', (socket) => {
         if (err) return console.error(err);
         db.get('SELECT * FROM messages WHERE id = ?', [this.lastID], (err, message) => {
           if (err) return console.error(err);
-          db.get('SELECT username, avatar FROM users WHERE id = ?', [socket.user.id], (err, user) => {
+          db.get('SELECT username, avatar, emoji FROM users WHERE id = ?', [socket.user.id], (err, user) => {
             if (err) return console.error(err);
             io.to(`chat_${chatId}`).emit('new_message', {
               ...message,
               username: user.username,
-              avatar: user.avatar
+              avatar: user.avatar,
+              emoji: user.emoji
             });
           });
         });

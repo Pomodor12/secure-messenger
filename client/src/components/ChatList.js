@@ -8,6 +8,7 @@ import { saveChats as cacheChats, getChats as loadCachedChats } from '../utils/s
 import ChatView from './ChatView';
 import NewChatModal from './NewChatModal';
 import UserProfile from './UserProfile';
+import EmojiPicker from './EmojiPicker';
 
 export default function ChatList() {
   const { user, token, logout } = useAuth();
@@ -19,6 +20,7 @@ export default function ChatList() {
   const [showProfile, setShowProfile] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState(null);
   const [status, setStatus] = useState(user?.status || '');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -88,6 +90,19 @@ export default function ChatList() {
     }
   };
 
+  const setEmoji = async (emoji) => {
+    try {
+      await fetch(`${API_URL}/api/auth/emoji`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ emoji })
+      });
+      user.emoji = emoji;
+    } catch (error) {
+      console.error('Error setting emoji:', error);
+    }
+  };
+
   const handleNewChat = (newChat) => {
     if (isDuplicateChat(chats, (newChat.members || '').split(','))) {
       return;
@@ -118,7 +133,7 @@ export default function ChatList() {
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setViewProfileUserId(user.id)}>
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold overflow-hidden">
-                {user?.avatar ? <img src={user.avatar} alt="" className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase()}
+                {user?.emoji ? <span className="text-xl">{user.emoji}</span> : user?.avatar ? <img src={user.avatar} alt="" className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase()}
               </div>
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-dark-900" />
             </div>
@@ -142,6 +157,12 @@ export default function ChatList() {
 
         {showProfile && (
           <div className="p-4 border-b border-dark-800 bg-dark-800/50">
+            <div className="flex items-center gap-3 mb-3">
+              <button onClick={() => setShowEmojiPicker(true)} className="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center text-2xl hover:bg-dark-600 transition-colors">
+                {user?.emoji || '😀'}
+              </button>
+              <span className="text-sm text-dark-300">Нажмите, чтобы выбрать эмодзи</span>
+            </div>
             <label className="block text-sm font-medium text-dark-300 mb-1">Статус</label>
             <div className="flex gap-2">
               <input type="text" value={status} onChange={(e) => setStatus(e.target.value)} className="flex-1 px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Ваш статус" />
@@ -168,7 +189,7 @@ export default function ChatList() {
             filteredChats.map(chat => (
               <div key={chat.id} onClick={() => setSelectedChat(chat)} className={`chat-item flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selectedChat?.id === chat.id ? 'active' : ''}`}>
                 <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
-                  {chat.is_group ? (chat.name?.charAt(0).toUpperCase() || 'Г') : (chat.members?.split(',')[0]?.charAt(0).toUpperCase() || '?')}
+                  {chat.is_group ? (chat.name?.charAt(0).toUpperCase() || 'Г') : (chat.emoji || chat.members?.split(',')[0]?.charAt(0).toUpperCase() || '?')}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -214,6 +235,8 @@ export default function ChatList() {
       {showNewChat && <NewChatModal onClose={() => { setShowNewChat(false); fetchChats(); }} />}
 
       {viewProfileUserId && <UserProfile userId={viewProfileUserId} onClose={() => setViewProfileUserId(null)} />}
+
+      {showEmojiPicker && <EmojiPicker onSelect={setEmoji} onClose={() => setShowEmojiPicker(false)} />}
     </div>
   );
 }
