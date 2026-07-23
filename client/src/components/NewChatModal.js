@@ -67,16 +67,16 @@ export default function NewChatModal({ onClose }) {
   const selectedBg = isDark ? 'bg-primary-600/20' : 'bg-primary-100';
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className={`${panelBg} rounded-2xl w-full max-w-md border shadow-2xl`} onClick={e => e.stopPropagation()}>
-        <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'border-dark-800' : 'border-gray-200'}`}>
+    <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 sm:p-4" onClick={onClose}>
+      <div className={`${panelBg} rounded-t-2xl sm:rounded-2xl w-full max-w-md border shadow-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
+        <div className={`flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b ${isDark ? 'border-dark-800' : 'border-gray-200'}`}>
           <h2 className={`text-lg font-semibold ${textColor}`}>Новый чат</h2>
           <button onClick={onClose} className={`p-1 rounded-lg ${isDark ? 'text-dark-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {selectedUsers.length > 1 && (
             <div className="mb-4">
               <label className={`block text-sm font-medium mb-1 ${mutedText}`}>Название группы</label>
@@ -119,7 +119,7 @@ export default function NewChatModal({ onClose }) {
           </div>
         </div>
 
-        <div className={`px-6 py-4 border-t ${isDark ? 'border-dark-800' : 'border-gray-200'}`}>
+        <div className={`px-4 sm:px-6 py-3 sm:py-4 border-t ${isDark ? 'border-dark-800' : 'border-gray-200'}`}>
           <button onClick={createChat} disabled={selectedUsers.length === 0} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {selectedUsers.length > 1 ? `Создать группу (${selectedUsers.length} чел.)` : 'Начать чат'}
           </button>

@@ -149,16 +149,16 @@ export default function ChatList() {
     <div className={`flex h-screen ${isDark ? 'bg-dark-950' : 'bg-gray-50'}`}>
       <div className={`${selectedChat ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 ${isDark ? 'bg-dark-900 border-dark-800' : 'bg-white border-gray-200'} border-r`}>
         {/* Header */}
-        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-dark-800' : 'border-gray-200'}`}>
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setViewProfileUserId(user.id)}>
-            <div>
-              <h2 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <div className={`flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b ${isDark ? 'border-dark-800' : 'border-gray-200'}`}>
+          <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-0" onClick={() => setViewProfileUserId(user.id)}>
+            <div className="min-w-0">
+              <h2 className={`font-semibold truncate text-sm sm:text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {user?.username}
               </h2>
-              <p className={`text-xs truncate max-w-[200px] ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{user?.status}</p>
+              <p className={`text-xs truncate max-w-[150px] sm:max-w-[200px] ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{user?.status}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
             <button onClick={() => setShowNewChat(true)} className={`p-2 rounded-lg transition-colors ${isDark ? 'text-dark-400 hover:text-white hover:bg-dark-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`} title="Новый чат">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             </button>
@@ -173,7 +173,7 @@ export default function ChatList() {
 
         {/* Profile panel */}
         {showProfile && (
-          <div className={`p-4 border-b ${isDark ? 'border-dark-800 bg-dark-800/50' : 'border-gray-200 bg-gray-50'}`}>
+          <div className={`p-3 sm:p-4 border-b max-h-[50vh] overflow-y-auto ${isDark ? 'border-dark-800 bg-dark-800/50' : 'border-gray-200 bg-gray-50'}`}>
             <div className="flex items-center gap-3 mb-3">
               <button onClick={() => setShowEmojiPicker(true)} className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-colors ${isDark ? 'bg-dark-700 hover:bg-dark-600' : 'bg-gray-200 hover:bg-gray-300'}`}>
                 {user?.emoji || '😀'}
@@ -219,7 +219,7 @@ export default function ChatList() {
         )}
 
         {/* Search */}
-        <div className="p-3">
+        <div className="p-2.5 sm:p-3">
           <div className="relative">
             <svg className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-dark-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${isDark ? 'bg-dark-800 border-dark-700 text-white placeholder-dark-500' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-400'}`} placeholder="Поиск чатов..." />
@@ -236,7 +236,7 @@ export default function ChatList() {
             </div>
           ) : (
             filteredChats.map(chat => (
-              <div key={chat.id} onClick={() => setSelectedChat(chat)} className={`chat-item flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selectedChat?.id === chat.id ? 'active' : ''} ${isDark ? 'hover:bg-dark-800' : 'hover:bg-gray-100'}`}>
+              <div key={chat.id} onClick={() => setSelectedChat(chat)} className={`chat-item flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 cursor-pointer transition-colors ${selectedChat?.id === chat.id ? 'active' : ''} ${isDark ? 'hover:bg-dark-800' : 'hover:bg-gray-100'}`}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -271,7 +271,7 @@ export default function ChatList() {
         </div>
       ) : (
         <div className={`hidden lg:flex flex-1 items-center justify-center ${isDark ? 'bg-dark-950' : 'bg-gray-50'}`}>
-          <div className={`text-center ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
+          <div className={`text-center px-4 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
             <PigeonLogo size={96} className="mx-auto mb-4 opacity-50" />
             <h2 className="text-xl font-semibold">Голуби</h2>
             <p className="mt-2 text-sm">Зашифрованный обмен сообщениями</p>

@@ -188,9 +188,15 @@ async function initDB() {
       encrypted_content TEXT,
       iv TEXT,
       message_type TEXT DEFAULT 'text',
+      reply_to INTEGER REFERENCES messages(id) ON DELETE SET NULL,
+      reactions TEXT DEFAULT '{}',
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+
+  // Migration: add reply_to and reactions if missing
+  await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to INTEGER REFERENCES messages(id) ON DELETE SET NULL`).catch(() => {});
+  await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS reactions TEXT DEFAULT '{}'`).catch(() => {});
 
   console.log('Database initialized');
 }
@@ -613,9 +619,13 @@ app.get('/api/chats/:chatId/messages', authenticateToken, requireChatMember, asy
   try {
     let query = `
       SELECT m.id, m.chat_id, m.user_id, m.content, m.content_encrypted, m.content_iv, m.content_tag,
-             m.encrypted_content, m.iv, m.message_type, m.created_at, u.username, u.emoji
+             m.encrypted_content, m.iv, m.message_type, m.reply_to, m.reactions, m.created_at,
+             u.username, u.emoji,
+             rm.content AS reply_content, ru.username AS reply_username
       FROM messages m
       JOIN users u ON m.user_id = u.id
+      LEFT JOIN messages rm ON m.reply_to = rm.id
+      LEFT JOIN users ru ON rm.user_id = ru.id
       WHERE m.chat_id = $1
     `;
     const params = [chatId];
@@ -663,6 +673,35 @@ app.delete('/api/chats/:chatId/messages/:messageId', authenticateToken, async (r
   }
 });
 
+app.post('/api/chats/:chatId/messages/:messageId/reactions', authenticateToken, async (req, res) => {
+  const messageId = parseInt(req.params.messageId);
+  const { emoji } = req.body;
+  if (!messageId || !emoji || typeof emoji !== 'string') return res.status(400).json({ error: 'Неверные данные' });
+
+  try {
+    const { rows } = await pool.query('SELECT reactions FROM messages WHERE id = $1 AND chat_id = $2', [messageId, req.params.chatId]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Сообщение не найдено' });
+
+    let reactions = {};
+    try { reactions = JSON.parse(rows[0].reactions || '{}'); } catch (e) {}
+
+    const userId = req.user.id.toString();
+    if (reactions[emoji] && reactions[emoji].includes(userId)) {
+      reactions[emoji] = reactions[emoji].filter(id => id !== userId);
+      if (reactions[emoji].length === 0) delete reactions[emoji];
+    } else {
+      reactions[emoji] = [...(reactions[emoji] || []), userId];
+    }
+
+    await pool.query('UPDATE messages SET reactions = $1 WHERE id = $2', [JSON.stringify(reactions), messageId]);
+    io.to(`chat_${req.params.chatId}`).emit('reaction_updated', { chatId: parseInt(req.params.chatId), messageId, reactions });
+    res.json({ reactions });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // --- Socket.IO Security ---
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -693,7 +732,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send_message', async (data) => {
-    const { chatId, content, encryptedContent, iv, messageType = 'text' } = data;
+    const { chatId, content, encryptedContent, iv, messageType = 'text', replyTo } = data;
 
     if (!chatId || !content || typeof content !== 'string') return;
     if (content.length > 500000) return;
@@ -706,10 +745,11 @@ io.on('connection', (socket) => {
       if (memberRows.length === 0) return;
 
       const encrypted = encryptServer(content);
+      const safeReplyTo = replyTo ? parseInt(replyTo) : null;
 
       const { rows: msgRows } = await pool.query(
-        `INSERT INTO messages (chat_id, user_id, content, content_encrypted, content_iv, content_tag, encrypted_content, iv, message_type)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        `INSERT INTO messages (chat_id, user_id, content, content_encrypted, content_iv, content_tag, encrypted_content, iv, message_type, reply_to)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
         [
           chatId,
           socket.user.id,
@@ -719,7 +759,8 @@ io.on('connection', (socket) => {
           encrypted?.tag || null,
           encryptedContent || null,
           iv || null,
-          messageType
+          messageType,
+          safeReplyTo
         ]
       );
       const message = msgRows[0];
@@ -727,11 +768,29 @@ io.on('connection', (socket) => {
       const { rows: userRows } = await pool.query('SELECT username, emoji FROM users WHERE id = $1', [socket.user.id]);
       const user = userRows[0];
 
+      let replyData = null;
+      if (safeReplyTo) {
+        const { rows: replyRows } = await pool.query(
+          'SELECT m.id, m.content, m.content_encrypted, m.content_iv, m.content_tag, u.username FROM messages m JOIN users u ON m.user_id = u.id WHERE m.id = $1',
+          [safeReplyTo]
+        );
+        if (replyRows.length > 0) {
+          const rm = replyRows[0];
+          let replyContent = rm.content;
+          if (rm.content_encrypted && rm.content_iv && rm.content_tag) {
+            const dec = decryptServer(rm.content_encrypted, rm.content_iv, rm.content_tag);
+            if (dec) replyContent = dec;
+          }
+          replyData = { id: rm.id, content: replyContent, username: rm.username };
+        }
+      }
+
       io.to(`chat_${chatId}`).emit('new_message', {
         ...message,
         content: content,
         username: user.username,
-        emoji: user.emoji
+        emoji: user.emoji,
+        reply_to_data: replyData
       });
     } catch (err) {
       console.error(err);

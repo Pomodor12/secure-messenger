@@ -104,22 +104,22 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
 
   if (!chat.is_group) {
     return (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
-        <div className={`${panelBg} rounded-2xl p-6 w-full max-w-sm`} onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
+        <div className={`${panelBg} rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 w-full max-w-sm max-h-[70vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
           <h2 className={`text-lg font-semibold ${textColor} mb-4`}>Информация о чате</h2>
           <div className={`${mutedText} mb-4`}>
             <p>Участники: {chat.members}</p>
           </div>
-          <button onClick={handleDeleteChat} className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg mb-2">Удалить чат</button>
-          <button onClick={onClose} className={`w-full py-2 ${btnBg} rounded-lg`}>Закрыть</button>
+          <button onClick={handleDeleteChat} className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg mb-2">Удалить чат</button>
+          <button onClick={onClose} className={`w-full py-2.5 ${btnBg} rounded-lg`}>Закрыть</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
-      <div className={`${panelBg} rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50" onClick={onClose}>
+      <div className={`${panelBg} rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 w-full max-w-md max-h-[80vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className={`text-lg font-semibold ${textColor}`}>Настройки группы</h2>
           <button onClick={onClose} className={mutedText + ' hover:' + textColor}>
