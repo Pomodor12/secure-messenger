@@ -17,6 +17,8 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
 const db = new sqlite3.Database(path.join(__dirname, 'messenger.db'));
 
 db.serialize(() => {
