@@ -195,8 +195,18 @@ async function initDB() {
   `);
 
   // Migration: add reply_to and reactions if missing
-  await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS reply_to INTEGER REFERENCES messages(id) ON DELETE SET NULL`).catch(() => {});
-  await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS reactions TEXT DEFAULT '{}'`).catch(() => {});
+  try {
+    await pool.query(`ALTER TABLE messages ADD COLUMN reply_to INTEGER REFERENCES messages(id) ON DELETE SET NULL`);
+    console.log('Added reply_to column');
+  } catch (e) {
+    if (!e.message.includes('already exists')) console.error('Migration reply_to:', e.message);
+  }
+  try {
+    await pool.query(`ALTER TABLE messages ADD COLUMN reactions TEXT DEFAULT '{}'`);
+    console.log('Added reactions column');
+  } catch (e) {
+    if (!e.message.includes('already exists')) console.error('Migration reactions:', e.message);
+  }
 
   console.log('Database initialized');
 }
@@ -649,8 +659,31 @@ app.get('/api/chats/:chatId/messages', authenticateToken, requireChatMember, asy
     });
     res.json(decrypted.reverse());
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    console.error('Messages query error, trying fallback:', err.message);
+    // Fallback: query without reply_to/joins in case columns don't exist yet
+    try {
+      const fallbackQuery = `
+        SELECT m.id, m.chat_id, m.user_id, m.content, m.content_encrypted, m.content_iv, m.content_tag,
+               m.encrypted_content, m.iv, m.message_type, m.created_at, u.username, u.emoji
+        FROM messages m
+        JOIN users u ON m.user_id = u.id
+        WHERE m.chat_id = $1
+        ORDER BY m.created_at DESC LIMIT $2
+      `;
+      const { rows } = await pool.query(fallbackQuery, [chatId, parsedLimit]);
+      const decrypted = rows.map(msg => {
+        let content = msg.content;
+        if (msg.content_encrypted && msg.content_iv && msg.content_tag) {
+          const dec = decryptServer(msg.content_encrypted, msg.content_iv, msg.content_tag);
+          if (dec) content = dec;
+        }
+        return { ...msg, content, content_encrypted: undefined, content_iv: undefined, content_tag: undefined };
+      });
+      res.json(decrypted.reverse());
+    } catch (fallbackErr) {
+      console.error(fallbackErr);
+      res.status(500).json({ error: 'Ошибка сервера' });
+    }
   }
 });
 
@@ -673,7 +706,7 @@ app.delete('/api/chats/:chatId/messages/:messageId', authenticateToken, async (r
   }
 });
 
-app.post('/api/chats/:chatId/messages/:messageId/reactions', authenticateToken, async (req, res) => {
+app.post('/api/chats/:chatId/messages/:messageId/reactions', authenticateToken, requireChatMember, async (req, res) => {
   const messageId = parseInt(req.params.messageId);
   const { emoji } = req.body;
   if (!messageId || !emoji || typeof emoji !== 'string') return res.status(400).json({ error: 'Неверные данные' });

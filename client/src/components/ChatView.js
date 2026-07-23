@@ -371,7 +371,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                     </div>
 
                     {/* Reaction picker button */}
-                    <div className={`absolute ${isOwn ? '-left-7' : '-right-7'} top-0 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                    <div className={`absolute ${isOwn ? '-left-7' : '-right-7'} top-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity opacity-70`}>
                       <button
                         onClick={() => setReactionPickerMsgId(reactionPickerMsgId === msg.id ? null : msg.id)}
                         className={`p-1 rounded-full ${isDark ? 'hover:bg-dark-700 text-dark-400' : 'hover:bg-gray-200 text-gray-400'}`}
@@ -387,7 +387,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
 
                     {/* Delete button */}
                     {isOwn && (
-                      <button onClick={() => handleDeleteMessage(msg.id)} className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                      <button onClick={() => handleDeleteMessage(msg.id)} className="absolute -top-2 -right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-70">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     )}
