@@ -45,7 +45,6 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     avatar TEXT DEFAULT NULL,
     status TEXT DEFAULT 'Hey, I am using Secure Messenger!',
@@ -110,32 +109,28 @@ function authenticateToken(req, res, next) {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const username = sanitize(req.body.username);
-    const email = sanitize(req.body.email);
     const password = req.body.password;
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'All fields are required' });
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
     }
     if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
       return res.status(400).json({ error: 'Username must be 3-30 chars, alphanumeric and underscore only' });
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
     }
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    db.run('INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-      [username, email, hashedPassword],
+    db.run('INSERT INTO users (username, password) VALUES (?, ?)',
+      [username, hashedPassword],
       function(err) {
         if (err) {
           if (err.message.includes('UNIQUE')) {
-            return res.status(400).json({ error: 'Username or email already exists' });
+            return res.status(400).json({ error: 'Username already exists' });
           }
           return res.status(500).json({ error: 'Database error' });
         }
         const token = jwt.sign({ id: this.lastID, username }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: this.lastID, username, email } });
+        res.json({ token, user: { id: this.lastID, username } });
       });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
@@ -145,8 +140,8 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { login, password } = req.body;
-    db.get('SELECT * FROM users WHERE username = ? OR email = ?',
-      [login, login],
+    db.get('SELECT * FROM users WHERE username = ?',
+      [login],
       async (err, user) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         if (!user) return res.status(400).json({ error: 'User not found' });
@@ -155,7 +150,7 @@ app.post('/api/auth/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({
           token,
-          user: { id: user.id, username: user.username, email: user.email, avatar: user.avatar, status: user.status }
+          user: { id: user.id, username: user.username, avatar: user.avatar, status: user.status }
         });
       });
   } catch (error) {
@@ -164,7 +159,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/auth/me', authenticateToken, (req, res) => {
-  db.get('SELECT id, username, email, avatar, status FROM users WHERE id = ?',
+  db.get('SELECT id, username, avatar, status FROM users WHERE id = ?',
     [req.user.id],
     (err, user) => {
       if (err) return res.status(500).json({ error: 'Database error' });
@@ -185,7 +180,7 @@ app.put('/api/auth/profile', authenticateToken, (req, res) => {
 
 app.get('/api/users/search', authenticateToken, (req, res) => {
   const { q } = req.query;
-  db.all('SELECT id, username, email, avatar, status FROM users WHERE username LIKE ? AND id != ? LIMIT 20',
+  db.all('SELECT id, username, avatar, status FROM users WHERE username LIKE ? AND id != ? LIMIT 20',
     [`%${q}%`, req.user.id],
     (err, users) => {
       if (err) return res.status(500).json({ error: 'Database error' });
@@ -251,7 +246,7 @@ app.get('/api/chats/:chatId/messages', authenticateToken, (req, res) => {
 });
 
 app.get('/api/users/:userId', authenticateToken, (req, res) => {
-  db.get('SELECT id, username, email, avatar, status FROM users WHERE id = ?',
+  db.get('SELECT id, username, avatar, status FROM users WHERE id = ?',
     [req.params.userId],
     (err, user) => {
       if (err) return res.status(500).json({ error: 'Database error' });

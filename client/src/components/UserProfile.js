@@ -57,9 +57,8 @@ export default function UserProfile({ userId, onClose }) {
             </div>
 
             <h3 className="text-xl font-bold text-white mb-1">{profile.username}</h3>
-            <p className="text-sm text-dark-400 mb-4">{profile.email}</p>
 
-            <div className="w-full bg-dark-800 rounded-xl p-4">
+            <div className="w-full bg-dark-800 rounded-xl p-4 mt-2">
               <p className="text-xs text-dark-500 mb-1">Status</p>
               <p className="text-sm text-dark-200">{profile.status || 'Hey, I am using Secure Messenger!'}</p>
             </div>

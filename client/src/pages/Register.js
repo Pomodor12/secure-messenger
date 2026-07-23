@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 export default function Register({ onSwitch }) {
   const { register } = useAuth();
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,13 +16,9 @@ export default function Register({ onSwitch }) {
       setError('Passwords do not match');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
     setLoading(true);
     try {
-      await register(username, email, password);
+      await register(username, password);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -64,18 +59,6 @@ export default function Register({ onSwitch }) {
                 placeholder="Choose a username"
                 required
                 minLength={3}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-dark-300 mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Enter your email"
-                required
               />
             </div>
 
