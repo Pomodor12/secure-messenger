@@ -6,6 +6,7 @@ import { getOrCreateKeyPair, encryptMessage, decryptMessage } from '../utils/cry
 import { saveMessage, getMessagesByChatId } from '../utils/storage';
 import { compressImage, sanitizeInput } from '../utils/helpers';
 import ChatSettings from './ChatSettings';
+import PigeonLogo from './PigeonLogo';
 
 export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated }) {
   const { user, token } = useAuth();
@@ -196,12 +197,6 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
   const getChatName = () => chat.name || chat.members || 'Неизвестный';
   const typingUser = typingUsers[chat.id];
 
-  const renderAvatar = (emoji, username, size = 'w-10 h-10') => (
-    <div className={`${size} rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0`}>
-      {emoji ? <span className={size === 'w-8 h-8' ? 'text-sm' : 'text-xl'}>{emoji}</span> : username?.charAt(0).toUpperCase()}
-    </div>
-  );
-
   return (
     <div className="flex flex-col h-full bg-dark-950">
       <div className="flex items-center gap-3 px-4 py-3 bg-dark-900 border-b border-dark-800">
@@ -209,9 +204,11 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <button onClick={() => setShowSettings(true)} className="flex items-center gap-3 flex-1 min-w-0">
-          {renderAvatar(chat.emoji, getChatName())}
+          <div className="w-10 h-10 rounded-full bg-dark-800 flex items-center justify-center text-xl flex-shrink-0">
+            {chat.emoji || '🕊️'}
+          </div>
           <div className="flex-1 text-left min-w-0">
-            <h3 className="font-semibold text-white truncate">{getChatName()}</h3>
+            <h3 className="font-semibold text-white truncate">{getChatName()} <span className="text-base">{chat.emoji || '🕊️'}</span></h3>
             <p className="text-xs text-dark-400 truncate">
               {typingUser ? `${typingUser.username} печатает...` : (chat.is_group ? 'Группа' : 'В сети')}
             </p>
@@ -230,7 +227,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-dark-400">
-            <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+            <PigeonLogo size={64} className="mb-4 opacity-50" />
             <p>Пока нет сообщений</p>
             <p className="text-sm">Отправьте первое сообщение, чтобы начать разговор</p>
           </div>
@@ -241,13 +238,15 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
             return (
               <div key={msg.id || index} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-4' : 'mt-1'}`}>
                 {!isOwn && (
-                  <div className="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-xs font-semibold text-white mr-2 flex-shrink-0 cursor-pointer" onClick={() => onShowProfile?.(msg.user_id)}>
-                    {showAvatar ? (msg.emoji || msg.username?.charAt(0).toUpperCase()) : ''}
+                  <div className="w-8 h-8 rounded-full bg-dark-800 flex items-center justify-center text-xs font-semibold text-white mr-2 flex-shrink-0 cursor-pointer" onClick={() => onShowProfile?.(msg.user_id)}>
+                    {showAvatar ? (msg.emoji || '🕊️') : ''}
                   </div>
                 )}
                 <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
                   {!isOwn && showAvatar && (
-                    <p className="text-xs text-dark-400 mb-1 ml-1 cursor-pointer hover:text-primary-400" onClick={() => onShowProfile?.(msg.user_id)}>{msg.username}</p>
+                    <p className="text-xs text-dark-400 mb-1 ml-1 cursor-pointer hover:text-primary-400" onClick={() => onShowProfile?.(msg.user_id)}>
+                      {msg.username} <span className="text-sm">{msg.emoji || '🕊️'}</span>
+                    </p>
                   )}
                   <div className="group relative">
                     <div className={`px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : 'bg-dark-800 text-dark-100 rounded-bl-md'}`}>

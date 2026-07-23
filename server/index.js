@@ -338,6 +338,13 @@ app.put('/api/auth/public-key', authenticateToken, (req, res) => {
 });
 
 // --- User Endpoints ---
+app.get('/api/users', authenticateToken, apiLimiter, (req, res) => {
+  db.all('SELECT id, username, emoji, status FROM users WHERE id != ? LIMIT 100', [req.user.id], (err, users) => {
+    if (err) return res.status(500).json({ error: 'Ошибка сервера' });
+    res.json(users);
+  });
+});
+
 app.get('/api/users/search', authenticateToken, apiLimiter, (req, res) => {
   const { q } = req.query;
   if (!q || q.length < 1) return res.json([]);

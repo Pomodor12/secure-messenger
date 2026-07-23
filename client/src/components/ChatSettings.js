@@ -156,10 +156,10 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
             members.map(m => (
                 <div key={m.id} className="flex items-center justify-between py-2 px-2 hover:bg-dark-800 rounded">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-xs text-white">
-                    {m.emoji || m.username?.charAt(0).toUpperCase()}
+                  <div className="w-8 h-8 rounded-full bg-dark-800 flex items-center justify-center text-xs text-white">
+                    {m.emoji || '🕊️'}
                   </div>
-                  <span className="text-white text-sm">{m.username}</span>
+                  <span className="text-white text-sm">{m.username} <span className="text-sm">{m.emoji || '🕊️'}</span></span>
                   {m.id === chat.created_by && <span className="text-xs text-primary-400">(создатель)</span>}
                 </div>
                 {(isCreator || m.id === user.id) && m.id !== chat.created_by && (

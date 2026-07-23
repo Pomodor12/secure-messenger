@@ -95,11 +95,11 @@ export default function NewChatModal({ onClose }) {
           <div className="max-h-60 overflow-y-auto">
             {users.map(user => (
               <div key={user.id} onClick={() => toggleUser(user)} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${selectedUsers.find(u => u.id === user.id) ? 'bg-primary-600/20' : 'hover:bg-dark-800'}`}>
-                <div className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-white font-semibold">
-                  {user.emoji || user.username.charAt(0).toUpperCase()}
+                <div className="w-10 h-10 rounded-full bg-dark-800 flex items-center justify-center text-white font-semibold">
+                  {user.emoji || '🕊️'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-white">{user.username}</h4>
+                  <h4 className="font-medium text-white">{user.username} <span className="text-base">{user.emoji || '🕊️'}</span></h4>
                 </div>
                 {selectedUsers.find(u => u.id === user.id) && (
                   <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
