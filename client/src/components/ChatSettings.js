@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import { useTheme } from '../context/ThemeContext';
 import { API_URL } from '../config';
 
 export default function ChatSettings({ chat, onClose, onChatDeleted }) {
   const { user, token } = useAuth();
-  const { socket } = useSocket();
+  const { socket, emojiChanges } = useSocket();
+  const { themeName } = useTheme();
+  const isDark = themeName === 'dark';
   const [members, setMembers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,16 +95,23 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
     );
   };
 
+  const panelBg = isDark ? 'bg-dark-900' : 'bg-white';
+  const textColor = isDark ? 'text-white' : 'text-gray-900';
+  const mutedText = isDark ? 'text-dark-300' : 'text-gray-600';
+  const inputBg = isDark ? 'bg-dark-800 border-dark-700 text-white' : 'bg-gray-100 border-gray-300 text-gray-900';
+  const hoverBg = isDark ? 'hover:bg-dark-800' : 'hover:bg-gray-100';
+  const btnBg = isDark ? 'bg-dark-700 hover:bg-dark-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-700';
+
   if (!chat.is_group) {
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
-        <div className="bg-dark-900 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-          <h2 className="text-lg font-semibold text-white mb-4">Информация о чате</h2>
-          <div className="text-dark-300 mb-4">
+        <div className={`${panelBg} rounded-2xl p-6 w-full max-w-sm`} onClick={e => e.stopPropagation()}>
+          <h2 className={`text-lg font-semibold ${textColor} mb-4`}>Информация о чате</h2>
+          <div className={`${mutedText} mb-4`}>
             <p>Участники: {chat.members}</p>
           </div>
           <button onClick={handleDeleteChat} className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg mb-2">Удалить чат</button>
-          <button onClick={onClose} className="w-full py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg">Закрыть</button>
+          <button onClick={onClose} className={`w-full py-2 ${btnBg} rounded-lg`}>Закрыть</button>
         </div>
       </div>
     );
@@ -109,10 +119,10 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
-      <div className="bg-dark-900 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className={`${panelBg} rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-white">Настройки группы</h2>
-          <button onClick={onClose} className="text-dark-400 hover:text-white">
+          <h2 className={`text-lg font-semibold ${textColor}`}>Настройки группы</h2>
+          <button onClick={onClose} className={mutedText + ' hover:' + textColor}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -120,13 +130,13 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
         <div className="mb-4">
           {renaming ? (
             <div className="flex gap-2">
-              <input value={newName} onChange={e => setNewName(e.target.value)} className="flex-1 px-3 py-2 bg-dark-800 border border-dark-700 rounded-lg text-white" autoFocus />
+              <input value={newName} onChange={e => setNewName(e.target.value)} className={`flex-1 px-3 py-2 border rounded-lg ${inputBg}`} autoFocus />
               <button onClick={handleRename} className="px-3 py-2 bg-primary-600 text-white rounded-lg">Сохранить</button>
-              <button onClick={() => setRenaming(false)} className="px-3 py-2 bg-dark-700 text-white rounded-lg">Отмена</button>
+              <button onClick={() => setRenaming(false)} className={`px-3 py-2 ${btnBg} rounded-lg`}>Отмена</button>
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <span className="text-dark-300">{chat.name || 'Без названия'}</span>
+              <span className={mutedText}>{chat.name || 'Без названия'}</span>
               {isCreator && <button onClick={() => setRenaming(true)} className="text-primary-400 hover:text-primary-300 text-sm">Переименовать</button>}
             </div>
           )}
@@ -134,16 +144,16 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
 
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-dark-300">Участники ({members.length})</span>
+            <span className={`text-sm font-medium ${mutedText}`}>Участники ({members.length})</span>
             <button onClick={() => setInviteMode(!inviteMode)} className="text-primary-400 hover:text-primary-300 text-sm">+ Пригласить</button>
           </div>
 
           {inviteMode && (
-            <div className="mb-3 p-3 bg-dark-800 rounded-lg max-h-40 overflow-y-auto">
+            <div className={`mb-3 p-3 rounded-lg max-h-40 overflow-y-auto ${isDark ? 'bg-dark-800' : 'bg-gray-100'}`}>
               {allUsers.filter(u => !members.some(m => m.id === u.id)).map(u => (
-                <label key={u.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-dark-700 rounded px-2">
+                <label key={u.id} className={`flex items-center gap-2 py-1 cursor-pointer rounded px-2 ${isDark ? 'hover:bg-dark-700' : 'hover:bg-gray-200'}`}>
                   <input type="checkbox" checked={selectedInvite.includes(u.id)} onChange={() => toggleInvite(u.id)} className="rounded" />
-                  <span className="text-white text-sm">{u.username}</span>
+                  <span className={`${textColor} text-sm`}>{u.username}</span>
                 </label>
               ))}
               <button onClick={handleInvite} disabled={selectedInvite.length === 0} className="mt-2 w-full py-1.5 bg-primary-600 text-white rounded-lg text-sm disabled:opacity-50">Добавить</button>
@@ -151,15 +161,13 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
           )}
 
           {loading ? (
-            <div className="text-dark-400 text-sm">Загрузка...</div>
+            <div className={`${mutedText} text-sm`}>Загрузка...</div>
           ) : (
             members.map(m => (
-                <div key={m.id} className="flex items-center justify-between py-2 px-2 hover:bg-dark-800 rounded">
+              <div key={m.id} className={`flex items-center justify-between py-2 px-2 rounded ${hoverBg}`}>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-dark-800 flex items-center justify-center text-xs text-white">
-                    {m.emoji || '🕊️'}
-                  </div>
-                  <span className="text-white text-sm">{m.username} <span className="text-sm">{m.emoji || '🕊️'}</span></span>
+                  <div className="text-lg">{emojiChanges[m.id] || m.emoji || '🕊️'}</div>
+                  <span className={`${textColor} text-sm`}>{m.username} <span className="text-base">{emojiChanges[m.id] || m.emoji || '🕊️'}</span></span>
                   {m.id === chat.created_by && <span className="text-xs text-primary-400">(создатель)</span>}
                 </div>
                 {(isCreator || m.id === user.id) && m.id !== chat.created_by && (
@@ -175,7 +183,7 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
         <div className="flex gap-2">
           {!isCreator && <button onClick={handleLeave} className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg">Покинуть группу</button>}
           {isCreator && <button onClick={handleDeleteChat} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">Удалить группу</button>}
-          <button onClick={onClose} className="flex-1 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg">Закрыть</button>
+          <button onClick={onClose} className={`flex-1 py-2 ${btnBg} rounded-lg`}>Закрыть</button>
         </div>
       </div>
     </div>

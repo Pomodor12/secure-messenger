@@ -145,7 +145,7 @@ db.serialize(() => {
     password TEXT NOT NULL,
     emoji TEXT DEFAULT NULL,
     public_key TEXT DEFAULT NULL,
-    status TEXT DEFAULT 'Привет, я использую Голуби!',
+    status TEXT DEFAULT 'Общаюсь голубями',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
@@ -322,6 +322,7 @@ app.put('/api/auth/emoji', authenticateToken, (req, res) => {
   }
   db.run('UPDATE users SET emoji = ? WHERE id = ?', [emoji, req.user.id], (err) => {
     if (err) return res.status(500).json({ error: 'Ошибка сервера' });
+    io.emit('emoji_changed', { userId: req.user.id, emoji });
     res.json({ message: 'Эмодзи обновлён', emoji });
   });
 });
@@ -627,7 +628,7 @@ io.on('connection', (socket) => {
 
     // Validate
     if (!chatId || !content || typeof content !== 'string') return;
-    if (content.length > 5000) return; // Max message length
+    if (content.length > 500000) return; // Max message length (500KB for images)
 
     // Verify membership
     db.get('SELECT 1 FROM chat_members WHERE chat_id = ? AND user_id = ?',

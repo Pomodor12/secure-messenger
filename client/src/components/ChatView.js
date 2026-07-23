@@ -1,16 +1,64 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { API_URL } from '../config';
 import { getOrCreateKeyPair, encryptMessage, decryptMessage } from '../utils/crypto';
 import { saveMessage, getMessagesByChatId } from '../utils/storage';
 import { compressImage, sanitizeInput } from '../utils/helpers';
 import ChatSettings from './ChatSettings';
 import PigeonLogo from './PigeonLogo';
+import PigeonSendIcon from './PigeonSendIcon';
+
+function ImageTimer({ createdAt, onExpired }) {
+  const [remaining, setRemaining] = useState(null);
+
+  useEffect(() => {
+    const created = new Date(createdAt).getTime();
+    const expires = created + 2 * 60 * 1000;
+    const update = () => {
+      const left = Math.max(0, expires - Date.now());
+      setRemaining(left);
+      if (left <= 0) {
+        onExpired();
+        return false;
+      }
+      return true;
+    };
+    update();
+    const interval = setInterval(() => {
+      if (!update()) clearInterval(interval);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt, onExpired]);
+
+  if (remaining === null || remaining <= 0) return null;
+
+  const totalSec = Math.ceil(remaining / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  const pct = remaining / (2 * 60 * 1000);
+
+  return (
+    <div className="flex items-center gap-1.5 mt-1">
+      <svg width="14" height="14" viewBox="0 0 14 14">
+        <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+        <circle cx="7" cy="7" r="6" fill="none" stroke="#22c55e" strokeWidth="1.5"
+          strokeDasharray={`${pct * 37.7} 37.7`}
+          transform="rotate(-90 7 7)" />
+      </svg>
+      <span className="text-xs text-dark-500">
+        {min}:{sec.toString().padStart(2, '0')}
+      </span>
+    </div>
+  );
+}
 
 export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated }) {
   const { user, token } = useAuth();
-  const { socket, typingUsers } = useSocket();
+  const { socket, typingUsers, emojiChanges } = useSocket();
+  const { themeName } = useTheme();
+  const isDark = themeName === 'dark';
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -184,6 +232,13 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
     });
   };
 
+  const handleImageExpired = async (messageId) => {
+    await fetch(`${API_URL}/api/chats/${chat.id}/messages/${messageId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  };
+
   const handleTyping = () => {
     if (socket) {
       socket.emit('typing', { chatId: chat.id });
@@ -196,37 +251,40 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
 
   const getChatName = () => chat.name || chat.members || 'Неизвестный';
   const typingUser = typingUsers[chat.id];
+  const chatEmoji = emojiChanges[chat.member_id] || chat.emoji || '🕊️';
 
   return (
-    <div className="flex flex-col h-full bg-dark-950">
-      <div className="flex items-center gap-3 px-4 py-3 bg-dark-900 border-b border-dark-800">
-        <button onClick={onBack} className="lg:hidden text-dark-400 hover:text-white">
+    <div className={`flex flex-col h-full ${isDark ? 'bg-dark-950' : 'bg-gray-50'}`}>
+      {/* Header */}
+      <div className={`flex items-center gap-3 px-4 py-3 border-b ${isDark ? 'bg-dark-900 border-dark-800' : 'bg-white border-gray-200'}`}>
+        <button onClick={onBack} className={`lg:hidden ${isDark ? 'text-dark-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <button onClick={() => setShowSettings(true)} className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-dark-800 flex items-center justify-center text-xl flex-shrink-0">
-            {chat.emoji || '🕊️'}
-          </div>
+          <div className="text-2xl flex-shrink-0">{chatEmoji}</div>
           <div className="flex-1 text-left min-w-0">
-            <h3 className="font-semibold text-white truncate">{getChatName()} <span className="text-base">{chat.emoji || '🕊️'}</span></h3>
-            <p className="text-xs text-dark-400 truncate">
+            <h3 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {getChatName()} <span className="text-base">{chatEmoji}</span>
+            </h3>
+            <p className={`text-xs truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
               {typingUser ? `${typingUser.username} печатает...` : (chat.is_group ? 'Группа' : 'В сети')}
             </p>
           </div>
         </button>
-        <div className="flex items-center gap-1 px-2 py-1 bg-dark-800 rounded-lg">
+        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${isDark ? 'bg-dark-800' : 'bg-gray-100'}`}>
           <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
-          <span className="text-xs text-dark-400">E2E</span>
+          <span className={`text-xs ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>E2E</span>
         </div>
       </div>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-dark-400">
+          <div className={`flex flex-col items-center justify-center h-full ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
             <PigeonLogo size={64} className="mb-4 opacity-50" />
             <p>Пока нет сообщений</p>
             <p className="text-sm">Отправьте первое сообщение, чтобы начать разговор</p>
@@ -237,21 +295,21 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
             const showAvatar = index === 0 || messages[index - 1]?.user_id !== msg.user_id;
             return (
               <div key={msg.id || index} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-4' : 'mt-1'}`}>
-                {!isOwn && (
-                  <div className="w-8 h-8 rounded-full bg-dark-800 flex items-center justify-center text-xs font-semibold text-white mr-2 flex-shrink-0 cursor-pointer" onClick={() => onShowProfile?.(msg.user_id)}>
-                    {showAvatar ? (msg.emoji || '🕊️') : ''}
-                  </div>
-                )}
                 <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
                   {!isOwn && showAvatar && (
-                    <p className="text-xs text-dark-400 mb-1 ml-1 cursor-pointer hover:text-primary-400" onClick={() => onShowProfile?.(msg.user_id)}>
-                      {msg.username} <span className="text-sm">{msg.emoji || '🕊️'}</span>
+                    <p className={`text-xs mb-1 ml-1 cursor-pointer hover:text-primary-400 ${isDark ? 'text-dark-400' : 'text-gray-500'}`} onClick={() => onShowProfile?.(msg.user_id)}>
+                      {msg.username} <span className="text-sm">{emojiChanges[msg.user_id] || msg.emoji || '🕊️'}</span>
                     </p>
                   )}
                   <div className="group relative">
-                    <div className={`px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : 'bg-dark-800 text-dark-100 rounded-bl-md'}`}>
+                    <div className={`px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : isDark ? 'bg-dark-800 text-dark-100 rounded-bl-md' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-md'}`}>
                       {msg.message_type === 'image' ? (
-                        <img src={msg.content} alt="фото" className="rounded-lg max-w-full" />
+                        <div>
+                          <img src={msg.content} alt="фото" className="rounded-lg max-w-full" />
+                          {isOwn && (
+                            <ImageTimer createdAt={msg.created_at} onExpired={() => handleImageExpired(msg.id)} />
+                          )}
+                        </div>
                       ) : (
                         <p className="break-words">{msg.content}</p>
                       )}
@@ -262,7 +320,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                       </button>
                     )}
                   </div>
-                  <p className={`text-xs text-dark-500 mt-1 ${isOwn ? 'text-right mr-1' : 'ml-1'}`}>
+                  <p className={`text-xs mt-1 ${isOwn ? 'text-right mr-1' : 'ml-1'} ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>
                     {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -273,10 +331,11 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSendMessage} className="p-4 bg-dark-900 border-t border-dark-800">
+      {/* Input */}
+      <form onSubmit={handleSendMessage} className={`p-4 border-t ${isDark ? 'bg-dark-900 border-dark-800' : 'bg-white border-gray-200'}`}>
         <div className="flex items-center gap-3">
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSend} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className={`p-2 rounded-lg transition-colors ${isDark ? 'text-dark-400 hover:text-white hover:bg-dark-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
           </button>
           <input
@@ -284,14 +343,14 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
             value={newMessage}
             onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
             placeholder="Введите сообщение..."
-            className="flex-1 px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className={`flex-1 px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${isDark ? 'bg-dark-800 border-dark-700 text-white placeholder-dark-500' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-400'}`}
           />
           <button
             type="submit"
             disabled={!newMessage.trim() || sending}
             className="p-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+            <PigeonSendIcon size={20} />
           </button>
         </div>
       </form>

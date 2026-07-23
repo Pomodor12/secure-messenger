@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import PigeonLogo from '../components/PigeonLogo';
 
 export default function Register({ onSwitch }) {
   const { register } = useAuth();
+  const { themeName } = useTheme();
+  const isDark = themeName === 'dark';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,18 +31,18 @@ export default function Register({ onSwitch }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-950 p-4">
+    <div className={`min-h-screen flex items-center justify-center p-4 ${isDark ? 'bg-dark-950' : 'bg-gray-50'}`}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="mx-auto mb-4">
             <PigeonLogo size={80} />
           </div>
-          <h1 className="text-2xl font-bold text-white">Голуби</h1>
-          <p className="text-dark-400 mt-1">Создайте зашифрованный аккаунт</p>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Голуби</h1>
+          <p className={`mt-1 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>Создайте зашифрованный аккаунт</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-dark-900 rounded-2xl p-6 shadow-xl border border-dark-800">
-          <h2 className="text-xl font-semibold text-white mb-6">Регистрация</h2>
+        <form onSubmit={handleSubmit} className={`${isDark ? 'bg-dark-900 border-dark-800' : 'bg-white border-gray-200'} rounded-2xl p-6 shadow-xl border`}>
+          <h2 className={`text-xl font-semibold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Регистрация</h2>
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl mb-4 text-sm">
@@ -49,12 +52,12 @@ export default function Register({ onSwitch }) {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-dark-300 mb-1">Имя пользователя</label>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>Имя пользователя</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${isDark ? 'bg-dark-800 border-dark-700 text-white placeholder-dark-500' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-400'}`}
                 placeholder="Придумайте имя пользователя"
                 required
                 minLength={3}
@@ -62,12 +65,12 @@ export default function Register({ onSwitch }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-dark-300 mb-1">Пароль</label>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>Пароль</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${isDark ? 'bg-dark-800 border-dark-700 text-white placeholder-dark-500' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-400'}`}
                 placeholder="Придумайте пароль"
                 required
                 minLength={6}
@@ -75,12 +78,12 @@ export default function Register({ onSwitch }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-dark-300 mb-1">Подтвердите пароль</label>
+              <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>Подтвердите пароль</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${isDark ? 'bg-dark-800 border-dark-700 text-white placeholder-dark-500' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-400'}`}
                 placeholder="Повторите пароль"
                 required
               />
@@ -95,7 +98,7 @@ export default function Register({ onSwitch }) {
             {loading ? 'Создание...' : 'Создать аккаунт'}
           </button>
 
-          <p className="text-center text-dark-400 mt-4">
+          <p className={`text-center mt-4 ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
             Уже есть аккаунт?{' '}
             <button type="button" onClick={onSwitch} className="text-primary-400 hover:text-primary-300">
               Войти
