@@ -155,7 +155,7 @@ app.post('/api/auth/login', async (req, res) => {
         const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '365d' });
         res.json({
           token,
-          user: { id: user.id, username: user.username, avatar: user.avatar, status: user.status }
+          user: { id: user.id, username: user.username, emoji: user.emoji, status: user.status }
         });
       });
   } catch (error) {
@@ -164,7 +164,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/auth/me', authenticateToken, (req, res) => {
-  db.get('SELECT id, username, avatar, status FROM users WHERE id = ?',
+  db.get('SELECT id, username, emoji, status FROM users WHERE id = ?',
     [req.user.id],
     (err, user) => {
       if (err) return res.status(500).json({ error: 'Database error' });
@@ -173,7 +173,7 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
           [req.user.id, req.user.username],
           function(err) {
             if (err) return res.status(500).json({ error: 'Database error' });
-            res.json({ id: req.user.id, username: req.user.username, avatar: null, status: 'Hey, I am using Secure Messenger!' });
+            res.json({ id: req.user.id, username: user?.username, emoji: null, status: 'Привет, я использую Голуби!' });
           });
         return;
       }
@@ -182,9 +182,9 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
 });
 
 app.put('/api/auth/profile', authenticateToken, (req, res) => {
-  const { status, avatar } = req.body;
-  db.run('UPDATE users SET status = COALESCE(?, status), avatar = COALESCE(?, avatar) WHERE id = ?',
-    [status, avatar, req.user.id],
+  const { status } = req.body;
+  db.run('UPDATE users SET status = COALESCE(?, status) WHERE id = ?',
+    [status, req.user.id],
     (err) => {
       if (err) return res.status(500).json({ error: 'Database error' });
       res.json({ message: 'Profile updated' });
@@ -217,9 +217,17 @@ app.get('/api/users/:id/public-key', authenticateToken, (req, res) => {
   });
 });
 
+app.get('/api/users/:id', authenticateToken, (req, res) => {
+  db.get('SELECT id, username, emoji, status FROM users WHERE id = ?', [req.params.id], (err, user) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  });
+});
+
 app.get('/api/users/search', authenticateToken, (req, res) => {
   const { q } = req.query;
-  db.all('SELECT id, username, avatar, emoji, status FROM users WHERE username LIKE ? AND id != ? LIMIT 20',
+  db.all('SELECT id, username, emoji, status FROM users WHERE username LIKE ? AND id != ? LIMIT 20',
     [`%${q}%`, req.user.id],
     (err, users) => {
       if (err) return res.status(500).json({ error: 'Database error' });
@@ -266,7 +274,7 @@ app.get('/api/chats/:chatId/messages', authenticateToken, (req, res) => {
   const { chatId } = req.params;
   const { before, limit = 50 } = req.query;
   let query = `
-    SELECT m.*, u.username, u.avatar, u.emoji
+    SELECT m.*, u.username, u.emoji
     FROM messages m
     JOIN users u ON m.user_id = u.id
     WHERE m.chat_id = ?
@@ -304,7 +312,7 @@ app.post('/api/chats/:chatId/members', authenticateToken, (req, res) => {
 
 app.get('/api/chats/:chatId/members', authenticateToken, (req, res) => {
   db.all(`
-    SELECT u.id, u.username, u.avatar, u.emoji, u.status
+    SELECT u.id, u.username, u.emoji, u.status
     FROM users u
     JOIN chat_members cm ON u.id = cm.user_id
     WHERE cm.chat_id = ?
@@ -441,12 +449,11 @@ io.on('connection', (socket) => {
         if (err) return console.error(err);
         db.get('SELECT * FROM messages WHERE id = ?', [this.lastID], (err, message) => {
           if (err) return console.error(err);
-          db.get('SELECT username, avatar, emoji FROM users WHERE id = ?', [socket.user.id], (err, user) => {
+          db.get('SELECT username, emoji FROM users WHERE id = ?', [socket.user.id], (err, user) => {
             if (err) return console.error(err);
             io.to(`chat_${chatId}`).emit('new_message', {
               ...message,
               username: user.username,
-              avatar: user.avatar,
               emoji: user.emoji
             });
           });

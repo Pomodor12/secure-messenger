@@ -133,7 +133,7 @@ export default function ChatList() {
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setViewProfileUserId(user.id)}>
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold overflow-hidden">
-                {user?.emoji ? <span className="text-xl">{user.emoji}</span> : user?.avatar ? <img src={user.avatar} alt="" className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase()}
+                {user?.emoji || user?.username?.charAt(0).toUpperCase()}
               </div>
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-dark-900" />
             </div>

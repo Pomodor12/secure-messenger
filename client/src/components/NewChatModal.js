@@ -96,7 +96,7 @@ export default function NewChatModal({ onClose }) {
             {users.map(user => (
               <div key={user.id} onClick={() => toggleUser(user)} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${selectedUsers.find(u => u.id === user.id) ? 'bg-primary-600/20' : 'hover:bg-dark-800'}`}>
                 <div className="w-10 h-10 rounded-full bg-dark-700 flex items-center justify-center text-white font-semibold">
-                  {user.emoji ? <span className="text-xl">{user.emoji}</span> : user.username.charAt(0).toUpperCase()}
+                  {user.emoji || user.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-white">{user.username}</h4>

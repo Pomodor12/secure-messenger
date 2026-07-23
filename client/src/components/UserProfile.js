@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import AvatarUpload from './AvatarUpload';
 
 export default function UserProfile({ userId, onClose }) {
   const { user: currentUser, token } = useAuth();
@@ -40,21 +39,11 @@ export default function UserProfile({ userId, onClose }) {
         ) : profile && (
           <div className="p-6 flex flex-col items-center">
             <div className="relative mb-4">
-              {isOwn ? (
-                <AvatarUpload currentAvatar={profile.avatar} onAvatarChange={() => {}} size="xl" />
-              ) : (
-                <div className="w-28 h-28 rounded-full overflow-hidden bg-primary-600 flex items-center justify-center">
-                  {profile.emoji ? (
-                    <span className="text-6xl">{profile.emoji}</span>
-                  ) : profile.avatar ? (
-                    <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-white font-bold text-3xl">{profile.username?.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-              )}
+              <div className="text-7xl">
+                {profile.emoji || profile.username?.charAt(0).toUpperCase()}
+              </div>
               {!isOwn && (
-                <div className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-dark-900 ${isOnline ? 'bg-green-500' : 'bg-dark-500'}`} />
+                <div className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-dark-900 ${isOnline ? 'bg-green-500' : 'bg-dark-500'}`} />
               )}
             </div>
 

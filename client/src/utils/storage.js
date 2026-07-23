@@ -16,9 +16,6 @@ function openDB() {
       if (!db.objectStoreNames.contains('keys')) {
         db.createObjectStore('keys', { keyPath: 'userId' });
       }
-      if (!db.objectStoreNames.contains('avatars')) {
-        db.createObjectStore('avatars', { keyPath: 'userId' });
-      }
       if (!db.objectStoreNames.contains('chats')) {
         db.createObjectStore('chats', { keyPath: 'id' });
       }
@@ -82,26 +79,6 @@ export async function getKeys(userId) {
   const request = tx.objectStore('keys').get(userId);
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-export async function saveAvatar(userId, avatarDataUrl) {
-  const db = await openDB();
-  const tx = db.transaction('avatars', 'readwrite');
-  tx.objectStore('avatars').put({ userId, avatar: avatarDataUrl, updatedAt: new Date().toISOString() });
-  return new Promise((resolve, reject) => {
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-export async function getAvatar(userId) {
-  const db = await openDB();
-  const tx = db.transaction('avatars', 'readonly');
-  const request = tx.objectStore('avatars').get(userId);
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result?.avatar || null);
     request.onerror = () => reject(request.error);
   });
 }
