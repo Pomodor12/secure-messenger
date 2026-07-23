@@ -1,16 +1,8 @@
 {
   "name": "secure-messenger",
   "version": "1.0.0",
-  "description": "Secure Messenger - End-to-end encrypted messaging",
+  "private": true,
   "scripts": {
-    "install:all": "npm install && cd client && npm install",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm start",
-    "client": "cd client && npm start",
-    "build": "cd client && npm run build",
-    "start": "cd server && npm start"
-  },
-  "dependencies": {
-    "concurrently": "^8.2.2"
+    "start": "node server/index.js"
   }
 }
