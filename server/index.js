@@ -19,8 +19,25 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'default_secret_change
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 
+// --- Security: CORS ---
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+};
+
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server, { cors: corsOptions });
 
 // --- Security: Helmet ---
 app.use(helmet({
@@ -40,21 +57,7 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// --- Security: CORS ---
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:3001'];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
+app.use(cors(corsOptions));
 
 // --- Security: Rate Limiting ---
 const authLimiter = rateLimit({
