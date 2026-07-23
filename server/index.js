@@ -271,6 +271,93 @@ app.post('/api/chats/:chatId/members', authenticateToken, (req, res) => {
   res.json({ message: 'Members added' });
 });
 
+app.get('/api/chats/:chatId/members', authenticateToken, (req, res) => {
+  db.all(`
+    SELECT u.id, u.username, u.avatar, u.status
+    FROM users u
+    JOIN chat_members cm ON u.id = cm.user_id
+    WHERE cm.chat_id = ?
+  `, [req.params.chatId], (err, members) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json(members);
+  });
+});
+
+app.delete('/api/chats/:chatId/members/:userId', authenticateToken, (req, res) => {
+  db.get('SELECT is_group, created_by FROM chats WHERE id = ?', [req.params.chatId], (err, chat) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+    if (!chat.is_group) return res.status(400).json({ error: 'Cannot remove from direct chat' });
+    if (chat.created_by !== req.user.id && parseInt(req.params.userId) !== req.user.id) {
+      return res.status(403).json({ error: 'Only creator can remove others' });
+    }
+    db.run('DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?', [req.params.chatId, req.params.userId], (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      io.to(`chat_${req.params.chatId}`).emit('member_removed', { chatId: parseInt(req.params.chatId), userId: parseInt(req.params.userId) });
+      res.json({ message: 'Member removed' });
+    });
+  });
+});
+
+app.delete('/api/chats/:chatId', authenticateToken, (req, res) => {
+  db.get('SELECT created_by FROM chats WHERE id = ?', [req.params.chatId], (err, chat) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+    db.run('DELETE FROM messages WHERE chat_id = ?', [req.params.chatId], () => {
+      db.run('DELETE FROM chat_members WHERE chat_id = ?', [req.params.chatId], () => {
+        db.run('DELETE FROM encryption_keys WHERE chat_id = ?', [req.params.chatId], () => {
+          db.run('DELETE FROM chats WHERE id = ?', [req.params.chatId], (err) => {
+            if (err) return res.status(500).json({ error: 'Database error' });
+            io.to(`chat_${req.params.chatId}`).emit('chat_deleted', { chatId: parseInt(req.params.chatId) });
+            res.json({ message: 'Chat deleted' });
+          });
+        });
+      });
+    });
+  });
+});
+
+app.delete('/api/chats/:chatId/messages/:messageId', authenticateToken, (req, res) => {
+  db.get('SELECT user_id FROM messages WHERE id = ?', [req.params.messageId], (err, msg) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    db.run('DELETE FROM messages WHERE id = ?', [req.params.messageId], (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      io.to(`chat_${req.params.chatId}`).emit('message_deleted', { chatId: parseInt(req.params.chatId), messageId: parseInt(req.params.messageId) });
+      res.json({ message: 'Message deleted' });
+    });
+  });
+});
+
+app.put('/api/chats/:chatId', authenticateToken, (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Name required' });
+  db.get('SELECT is_group FROM chats WHERE id = ?', [req.params.chatId], (err, chat) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+    if (!chat.is_group) return res.status(400).json({ error: 'Can only rename group chats' });
+    db.run('UPDATE chats SET name = ? WHERE id = ?', [sanitize(name.trim()), req.params.chatId], (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      io.to(`chat_${req.params.chatId}`).emit('chat_renamed', { chatId: parseInt(req.params.chatId), name: name.trim() });
+      res.json({ message: 'Chat renamed' });
+    });
+  });
+});
+
+app.post('/api/chats/:chatId/leave', authenticateToken, (req, res) => {
+  db.get('SELECT is_group, created_by FROM chats WHERE id = ?', [req.params.chatId], (err, chat) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+    if (!chat.is_group) return res.status(400).json({ error: 'Cannot leave direct chat' });
+    if (chat.created_by === req.user.id) return res.status(400).json({ error: 'Creator cannot leave. Delete the group instead.' });
+    db.run('DELETE FROM chat_members WHERE chat_id = ? AND user_id = ?', [req.params.chatId, req.user.id], (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      io.to(`chat_${req.params.chatId}`).emit('member_removed', { chatId: parseInt(req.params.chatId), userId: req.user.id });
+      res.json({ message: 'Left group' });
+    });
+  });
+});
+
 app.get('/api/encryption/keys/:chatId', authenticateToken, (req, res) => {
   db.all('SELECT * FROM encryption_keys WHERE chat_id = ?',
     [req.params.chatId],

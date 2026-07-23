@@ -5,14 +5,16 @@ import { API_URL } from '../config';
 import { getOrCreateKeyPair, getPeerPublicKey, encryptMessage, decryptMessage, savePeerPublicKey } from '../utils/crypto';
 import { saveMessage, getMessagesByChatId } from '../utils/storage';
 import { compressImage, sanitizeInput } from '../utils/helpers';
+import ChatSettings from './ChatSettings';
 
-export default function ChatView({ chat, onBack, onShowProfile }) {
+export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated }) {
   const { user, token } = useAuth();
   const { socket, typingUsers } = useSocket();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -77,9 +79,37 @@ export default function ChatView({ chat, onBack, onShowProfile }) {
           await saveMessage(message);
         }
       };
+
+      const handleDelete = ({ messageId }) => {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+      };
+
+      const handleChatDeleted = ({ chatId }) => {
+        onChatUpdated?.(chatId, 'deleted');
+      };
+
+      const handleChatRenamed = ({ chatId, name }) => {
+        onChatUpdated?.(chatId, 'renamed', name);
+      };
+
+      const handleMemberRemoved = ({ chatId, userId }) => {
+        if (userId === user.id) {
+          onChatUpdated?.(chatId, 'deleted');
+        }
+      };
+
       socket.on('new_message', handleMessage);
+      socket.on('message_deleted', handleDelete);
+      socket.on('chat_deleted', handleChatDeleted);
+      socket.on('chat_renamed', handleChatRenamed);
+      socket.on('member_removed', handleMemberRemoved);
+
       return () => {
         socket.off('new_message', handleMessage);
+        socket.off('message_deleted', handleDelete);
+        socket.off('chat_deleted', handleChatDeleted);
+        socket.off('chat_renamed', handleChatRenamed);
+        socket.off('member_removed', handleMemberRemoved);
         socket.emit('leave_chat', chat.id);
       };
     }
@@ -132,6 +162,14 @@ export default function ChatView({ chat, onBack, onShowProfile }) {
     e.target.value = '';
   };
 
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Delete this message?')) return;
+    await fetch(`${API_URL}/api/chats/${chat.id}/messages/${messageId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  };
+
   const handleTyping = () => {
     if (socket) {
       socket.emit('typing', { chatId: chat.id });
@@ -151,15 +189,17 @@ export default function ChatView({ chat, onBack, onShowProfile }) {
         <button onClick={onBack} className="lg:hidden text-dark-400 hover:text-white">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
-          {getChatName().charAt(0).toUpperCase()}
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-white">{getChatName()}</h3>
-          <p className="text-xs text-dark-400">
-            {typingUser ? `${typingUser.username} is typing...` : (chat.is_group ? 'Group' : 'Online')}
-          </p>
-        </div>
+        <button onClick={() => setShowSettings(true)} className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+            {getChatName().charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 text-left min-w-0">
+            <h3 className="font-semibold text-white truncate">{getChatName()}</h3>
+            <p className="text-xs text-dark-400 truncate">
+              {typingUser ? `${typingUser.username} is typing...` : (chat.is_group ? 'Group' : 'Online')}
+            </p>
+          </div>
+        </button>
         <div className="flex items-center gap-1 px-2 py-1 bg-dark-800 rounded-lg">
           <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
           <span className="text-xs text-dark-400">E2E</span>
@@ -192,11 +232,18 @@ export default function ChatView({ chat, onBack, onShowProfile }) {
                   {!isOwn && showAvatar && (
                     <p className="text-xs text-dark-400 mb-1 ml-1 cursor-pointer hover:text-primary-400" onClick={() => onShowProfile?.(msg.user_id)}>{msg.username}</p>
                   )}
-                  <div className={`px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : 'bg-dark-800 text-dark-100 rounded-bl-md'}`}>
-                    {msg.message_type === 'image' ? (
-                      <img src={msg.content} alt="shared" className="rounded-lg max-w-full" />
-                    ) : (
-                      <p className="break-words">{msg.content}</p>
+                  <div className="group relative">
+                    <div className={`px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : 'bg-dark-800 text-dark-100 rounded-bl-md'}`}>
+                      {msg.message_type === 'image' ? (
+                        <img src={msg.content} alt="shared" className="rounded-lg max-w-full" />
+                      ) : (
+                        <p className="break-words">{msg.content}</p>
+                      )}
+                    </div>
+                    {isOwn && (
+                      <button onClick={() => handleDeleteMessage(msg.id)} className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
                     )}
                   </div>
                   <p className={`text-xs text-dark-500 mt-1 ${isOwn ? 'text-right mr-1' : 'ml-1'}`}>
@@ -232,6 +279,17 @@ export default function ChatView({ chat, onBack, onShowProfile }) {
           </button>
         </div>
       </form>
+
+      {showSettings && (
+        <ChatSettings
+          chat={chat}
+          onClose={() => setShowSettings(false)}
+          onChatDeleted={(chatId) => {
+            setShowSettings(false);
+            onChatUpdated?.(chatId, 'deleted');
+          }}
+        />
+      )}
     </div>
   );
 }

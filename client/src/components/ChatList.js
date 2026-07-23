@@ -11,7 +11,7 @@ import UserProfile from './UserProfile';
 
 export default function ChatList() {
   const { user, token, logout } = useAuth();
-  const { onlineUsers } = useSocket();
+  const { socket, onlineUsers } = useSocket();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,6 +28,37 @@ export default function ChatList() {
       getOrCreateKeyPair();
     })();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleChatDeleted = ({ chatId }) => {
+      setChats(prev => prev.filter(c => c.id !== chatId));
+      setSelectedChat(prev => prev?.id === chatId ? null : prev);
+    };
+
+    const handleChatRenamed = ({ chatId, name }) => {
+      setChats(prev => prev.map(c => c.id === chatId ? { ...c, name } : c));
+      setSelectedChat(prev => prev?.id === chatId ? { ...prev, name } : prev);
+    };
+
+    const handleMemberRemoved = ({ chatId, userId }) => {
+      if (userId === user.id) {
+        setChats(prev => prev.filter(c => c.id !== chatId));
+        setSelectedChat(prev => prev?.id === chatId ? null : prev);
+      }
+    };
+
+    socket.on('chat_deleted', handleChatDeleted);
+    socket.on('chat_renamed', handleChatRenamed);
+    socket.on('member_removed', handleMemberRemoved);
+
+    return () => {
+      socket.off('chat_deleted', handleChatDeleted);
+      socket.off('chat_renamed', handleChatRenamed);
+      socket.off('member_removed', handleMemberRemoved);
+    };
+  }, [socket, user.id]);
 
   const fetchChats = async () => {
     try {
@@ -154,7 +185,20 @@ export default function ChatList() {
 
       {selectedChat ? (
         <div className="flex-1">
-          <ChatView chat={selectedChat} onBack={() => setSelectedChat(null)} onShowProfile={(uid) => setViewProfileUserId(uid)} />
+          <ChatView
+            chat={selectedChat}
+            onBack={() => setSelectedChat(null)}
+            onShowProfile={(uid) => setViewProfileUserId(uid)}
+            onChatUpdated={(chatId, action, data) => {
+              if (action === 'deleted') {
+                setChats(prev => prev.filter(c => c.id !== chatId));
+                setSelectedChat(null);
+              } else if (action === 'renamed') {
+                setChats(prev => prev.map(c => c.id === chatId ? { ...c, name: data } : c));
+                setSelectedChat(prev => prev?.id === chatId ? { ...prev, name: data } : prev);
+              }
+            }}
+          />
         </div>
       ) : (
         <div className="hidden lg:flex flex-1 items-center justify-center bg-dark-950">
