@@ -2,6 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+ENV NODE_ENV=
+
 COPY package*.json ./
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/
@@ -12,7 +14,7 @@ RUN cd client && npm install
 
 COPY . .
 
-RUN cd client && npm run build
+RUN cd client && npx react-scripts build
 
 EXPOSE 8080
 
