@@ -54,9 +54,31 @@ function ImageTimer({ createdAt, onExpired }) {
   );
 }
 
+const FRAME_STYLES = {
+  solid: { border: '2px solid currentColor', borderRadius: '16px', padding: '4px 12px' },
+  dashed: { border: '2px dashed currentColor', borderRadius: '16px', padding: '4px 12px' },
+  double: { border: '3px double currentColor', borderRadius: '16px', padding: '4px 12px' },
+  rounded: { border: '2px solid currentColor', borderRadius: '24px', padding: '4px 12px' },
+  cloud: { border: '2px solid currentColor', borderRadius: '20px 20px 20px 4px', padding: '4px 12px', background: 'currentColor', backgroundClip: 'padding-box' },
+};
+
+function SpeechBubble({ text, frame, isDark }) {
+  if (!text) return null;
+  const frameStyle = FRAME_STYLES[frame] || FRAME_STYLES.solid;
+  const colorClass = isDark ? 'text-dark-300' : 'text-gray-600';
+  return (
+    <div className="relative inline-block mb-1">
+      <div className={colorClass} style={{ ...frameStyle, fontSize: '11px', lineHeight: '1.3' }}>
+        {text}
+      </div>
+      <div className={`absolute -bottom-1.5 left-4 w-3 h-3 rotate-45 ${isDark ? 'bg-dark-900 border-r border-b border-dark-700' : 'bg-gray-50 border-r border-b border-gray-200'}`} />
+    </div>
+  );
+}
+
 export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated }) {
   const { user, token } = useAuth();
-  const { socket, typingUsers } = useSocket();
+  const { socket, typingUsers, emojiChanges, statusFrameChanges } = useSocket();
   const { themeName } = useTheme();
   const isDark = themeName === 'dark';
   const [messages, setMessages] = useState([]);
@@ -262,8 +284,16 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
         <button onClick={() => setShowSettings(true)} className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex-1 text-left min-w-0">
             <h3 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {emojiChanges[chat.member_id] || chat.member_emoji || ''}{' '}
               {getChatName()}
             </h3>
+            <div className="mt-0.5">
+              <SpeechBubble
+                text={chat.member_status}
+                frame={statusFrameChanges[chat.member_id] || chat.member_frame}
+                isDark={isDark}
+              />
+            </div>
             <p className={`text-xs truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
               {typingUser ? `${typingUser.username} печатает...` : (chat.is_group ? 'Группа' : 'В сети')}
             </p>
@@ -296,7 +326,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                 <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
                   {!isOwn && showAvatar && (
                     <p className={`text-xs mb-1 ml-1 cursor-pointer hover:text-primary-400 ${isDark ? 'text-dark-400' : 'text-gray-500'}`} onClick={() => onShowProfile?.(msg.user_id)}>
-                      {msg.username}
+                      {chat.member_emoji || ''} {msg.username}
                     </p>
                   )}
                   <div className="group relative">

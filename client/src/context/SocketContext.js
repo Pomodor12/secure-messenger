@@ -11,6 +11,7 @@ export function SocketProvider({ children }) {
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState({});
   const [emojiChanges, setEmojiChanges] = useState({});
+  const [statusFrameChanges, setStatusFrameChanges] = useState({});
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -50,6 +51,10 @@ export function SocketProvider({ children }) {
         setEmojiChanges(prev => ({ ...prev, [userId]: emoji }));
       });
 
+      newSocket.on('status_frame_changed', ({ userId, statusFrame }) => {
+        setStatusFrameChanges(prev => ({ ...prev, [userId]: statusFrame }));
+      });
+
       socketRef.current = newSocket;
       setSocket(newSocket);
 
@@ -61,7 +66,7 @@ export function SocketProvider({ children }) {
   }, [token]);
 
   return (
-    <SocketContext.Provider value={{ socket, onlineUsers, typingUsers, emojiChanges }}>
+    <SocketContext.Provider value={{ socket, onlineUsers, typingUsers, emojiChanges, statusFrameChanges }}>
       {children}
     </SocketContext.Provider>
   );

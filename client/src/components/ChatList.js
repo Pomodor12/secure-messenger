@@ -23,6 +23,7 @@ export default function ChatList() {
   const [showProfile, setShowProfile] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState(null);
   const [status, setStatus] = useState(user?.status || '');
+  const [statusFrame, setStatusFrame] = useState(user?.status_frame || 'solid');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
@@ -106,6 +107,19 @@ export default function ChatList() {
     }
   };
 
+  const updateStatusFrame = async (frame) => {
+    try {
+      await fetch(`${API_URL}/api/auth/status-frame`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ statusFrame: frame })
+      });
+      setStatusFrame(frame);
+    } catch (error) {
+      console.error('Error updating status frame:', error);
+    }
+  };
+
   const handleNewChat = (newChat) => {
     if (isDuplicateChat(chats, (newChat.members || '').split(','))) {
       return;
@@ -170,6 +184,24 @@ export default function ChatList() {
             <div className="flex gap-2">
               <input type="text" value={status} onChange={(e) => setStatus(e.target.value)} className={`flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 ${isDark ? 'bg-dark-700 border-dark-600 text-white' : 'bg-white border-gray-300 text-gray-900'}`} placeholder="Ваш статус" />
               <button onClick={updateStatus} className="px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm rounded-lg transition-colors">Сохранить</button>
+            </div>
+            {/* Comic frame picker */}
+            <div className="mt-3">
+              <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-dark-300' : 'text-gray-700'}`}>Рамка статуса</label>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { id: 'solid', label: '▬', title: 'Сплошная' },
+                  { id: 'dashed', label: '┄', title: 'Пунктирная' },
+                  { id: 'double', label: '═', title: 'Двойная' },
+                  { id: 'rounded', label: '〇', title: 'Скруглённая' },
+                  { id: 'cloud', label: '☁', title: 'Облачко' },
+                ].map(f => (
+                  <button key={f.id} onClick={() => updateStatusFrame(f.id)} title={f.title}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFrame === f.id ? 'bg-primary-600 text-white' : isDark ? 'bg-dark-700 text-dark-300 hover:bg-dark-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
             {/* Theme toggle */}
             <div className="mt-3">

@@ -146,6 +146,7 @@ db.serialize(() => {
     emoji TEXT DEFAULT NULL,
     public_key TEXT DEFAULT NULL,
     status TEXT DEFAULT 'Общаюсь голубями',
+    status_frame TEXT DEFAULT 'solid',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
@@ -327,6 +328,17 @@ app.put('/api/auth/emoji', authenticateToken, (req, res) => {
   });
 });
 
+app.put('/api/auth/status-frame', authenticateToken, (req, res) => {
+  const { statusFrame } = req.body;
+  const allowed = ['solid', 'dashed', 'double', 'rounded', 'cloud'];
+  const frame = allowed.includes(statusFrame) ? statusFrame : 'solid';
+  db.run('UPDATE users SET status_frame = ? WHERE id = ?', [frame, req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: 'Ошибка сервера' });
+    io.emit('status_frame_changed', { userId: req.user.id, statusFrame: frame });
+    res.json({ message: 'Рамка статуса обновлена', statusFrame: frame });
+  });
+});
+
 app.put('/api/auth/public-key', authenticateToken, (req, res) => {
   const { publicKey } = req.body;
   if (!publicKey || typeof publicKey !== 'string') {
@@ -340,7 +352,7 @@ app.put('/api/auth/public-key', authenticateToken, (req, res) => {
 
 // --- User Endpoints ---
 app.get('/api/users', authenticateToken, apiLimiter, (req, res) => {
-  db.all('SELECT id, username, emoji, status FROM users WHERE id != ? LIMIT 100', [req.user.id], (err, users) => {
+  db.all('SELECT id, username, emoji, status, status_frame FROM users WHERE id != ? LIMIT 100', [req.user.id], (err, users) => {
     if (err) return res.status(500).json({ error: 'Ошибка сервера' });
     res.json(users);
   });
@@ -395,12 +407,18 @@ app.get('/api/chats', authenticateToken, apiLimiter, (req, res) => {
         WHERE cm.chat_id = c.id AND cm.user_id != ? LIMIT 1) as member_emoji,
       (SELECT u.id FROM users u
         JOIN chat_members cm ON u.id = cm.user_id
-        WHERE cm.chat_id = c.id AND cm.user_id != ? LIMIT 1) as member_id
+        WHERE cm.chat_id = c.id AND cm.user_id != ? LIMIT 1) as member_id,
+      (SELECT u.status FROM users u
+        JOIN chat_members cm ON u.id = cm.user_id
+        WHERE cm.chat_id = c.id AND cm.user_id != ? LIMIT 1) as member_status,
+      (SELECT u.status_frame FROM users u
+        JOIN chat_members cm ON u.id = cm.user_id
+        WHERE cm.chat_id = c.id AND cm.user_id != ? LIMIT 1) as member_frame
     FROM chats c
     JOIN chat_members cm ON c.id = cm.chat_id
     WHERE cm.user_id = ?
     ORDER BY last_message_at DESC
-  `, [req.user.id, req.user.id, req.user.id, req.user.id],
+  `, [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id],
   (err, chats) => {
     if (err) return res.status(500).json({ error: 'Ошибка сервера' });
     // Decrypt last messages
