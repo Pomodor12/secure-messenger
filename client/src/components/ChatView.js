@@ -104,6 +104,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
   const [showSettings, setShowSettings] = useState(false);
   const [replyTo, setReplyTo] = useState(null);
   const [reactionPickerMsgId, setReactionPickerMsgId] = useState(null);
+  const [activeMsgId, setActiveMsgId] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -117,6 +118,8 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
     if (chat) {
       setLoading(true);
       setReplyTo(null);
+      setActiveMsgId(null);
+      setReactionPickerMsgId(null);
       (async () => {
         try {
           const cached = await getMessagesByChatId(chat.id);
@@ -199,10 +202,13 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   useEffect(() => {
-    const handler = (e) => { if (reactionPickerMsgId && !e.target.closest('.reaction-picker') && !e.target.closest('.reaction-toggle')) setReactionPickerMsgId(null); };
+    const handler = (e) => {
+      if (reactionPickerMsgId && !e.target.closest('.reaction-picker') && !e.target.closest('.reaction-toggle')) setReactionPickerMsgId(null);
+      if (activeMsgId && !e.target.closest('.msg-actions') && !e.target.closest('.msg-bubble')) setActiveMsgId(null);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [reactionPickerMsgId]);
+  }, [reactionPickerMsgId, activeMsgId]);
 
   const fetchPeerPublicKey = async (peerUserId) => {
     try {
@@ -231,6 +237,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
     socket.emit('stop_typing', { chatId: chat.id });
     setSending(false);
     setReplyTo(null);
+    setActiveMsgId(null);
   }, [socket, chat, token, replyTo]);
 
   const handleSendMessage = async (e) => {
@@ -357,7 +364,8 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
 
                   <div className="group relative">
                     <div
-                      className={`px-3 sm:px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : isDark ? 'bg-dark-800 text-dark-100 rounded-bl-md' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-md'}`}
+                      className={`msg-bubble px-3 sm:px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : isDark ? 'bg-dark-800 text-dark-100 rounded-bl-md' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-md'}`}
+                      onClick={() => { if (window.innerWidth < 640) setActiveMsgId(activeMsgId === msg.id ? null : msg.id); }}
                       onDoubleClick={() => setReplyTo({ id: msg.id, username: msg.username, content: msg.content })}
                     >
                       {msg.message_type === 'image' ? (
@@ -371,7 +379,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                     </div>
 
                     {/* Reaction picker button */}
-                    <div className={`absolute ${isOwn ? '-left-7' : '-right-7'} top-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity opacity-70`}>
+                    <div className={`msg-actions absolute ${isOwn ? '-left-7' : '-right-7'} top-0 transition-opacity ${activeMsgId === msg.id ? 'opacity-100' : 'sm:opacity-0 sm:group-hover:opacity-100 opacity-0'}`}>
                       <button
                         className={`reaction-toggle p-1 rounded-full ${isDark ? 'hover:bg-dark-700 text-dark-400' : 'hover:bg-gray-200 text-gray-400'}`}
                         onClick={(e) => { e.stopPropagation(); setReactionPickerMsgId(reactionPickerMsgId === msg.id ? null : msg.id); }}
@@ -387,7 +395,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
 
                     {/* Delete button */}
                     {isOwn && (
-                      <button onClick={() => handleDeleteMessage(msg.id)} className="absolute -top-2 -right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-70">
+                      <button onClick={() => handleDeleteMessage(msg.id)} className={`msg-actions absolute -top-2 -right-2 transition-opacity ${activeMsgId === msg.id ? 'opacity-100' : 'sm:opacity-0 sm:group-hover:opacity-100 opacity-0'} bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs`}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     )}
