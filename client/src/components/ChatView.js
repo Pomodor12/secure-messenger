@@ -56,7 +56,7 @@ function ImageTimer({ createdAt, onExpired }) {
 
 export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated }) {
   const { user, token } = useAuth();
-  const { socket, typingUsers, emojiChanges } = useSocket();
+  const { socket, typingUsers } = useSocket();
   const { themeName } = useTheme();
   const isDark = themeName === 'dark';
   const [messages, setMessages] = useState([]);
@@ -251,7 +251,6 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
 
   const getChatName = () => chat.name || chat.members || 'Неизвестный';
   const typingUser = typingUsers[chat.id];
-  const chatEmoji = emojiChanges[chat.member_id] || chat.emoji || '🕊️';
 
   return (
     <div className={`flex flex-col h-full ${isDark ? 'bg-dark-950' : 'bg-gray-50'}`}>
@@ -261,10 +260,9 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <button onClick={() => setShowSettings(true)} className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="text-2xl flex-shrink-0">{chatEmoji}</div>
           <div className="flex-1 text-left min-w-0">
             <h3 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              {getChatName()} <span className="text-base">{chatEmoji}</span>
+              {getChatName()}
             </h3>
             <p className={`text-xs truncate ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>
               {typingUser ? `${typingUser.username} печатает...` : (chat.is_group ? 'Группа' : 'В сети')}
@@ -298,7 +296,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                 <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-1' : ''}`}>
                   {!isOwn && showAvatar && (
                     <p className={`text-xs mb-1 ml-1 cursor-pointer hover:text-primary-400 ${isDark ? 'text-dark-400' : 'text-gray-500'}`} onClick={() => onShowProfile?.(msg.user_id)}>
-                      {msg.username} <span className="text-sm">{emojiChanges[msg.user_id] || msg.emoji || '🕊️'}</span>
+                      {msg.username}
                     </p>
                   )}
                   <div className="group relative">

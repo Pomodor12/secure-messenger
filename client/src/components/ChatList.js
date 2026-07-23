@@ -14,7 +14,7 @@ import PigeonLogo from './PigeonLogo';
 
 export default function ChatList() {
   const { user, token, logout } = useAuth();
-  const { socket, onlineUsers, emojiChanges } = useSocket();
+  const { socket, onlineUsers } = useSocket();
   const { themeName, setThemeName, themes } = useTheme();
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
@@ -114,10 +114,6 @@ export default function ChatList() {
     fetchChats();
   };
 
-  const getEmojiForUser = (userId, fallback) => {
-    return emojiChanges[userId] || fallback;
-  };
-
   const filteredChats = chats.filter(chat =>
     (chat.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (chat.members?.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -141,10 +137,9 @@ export default function ChatList() {
         {/* Header */}
         <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-dark-800' : 'border-gray-200'}`}>
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setViewProfileUserId(user.id)}>
-            <div className="text-2xl">{user?.emoji || '🕊️'}</div>
             <div>
               <h2 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {user?.username} <span className="text-base">{user?.emoji || '🕊️'}</span>
+                {user?.username}
               </h2>
               <p className={`text-xs truncate max-w-[200px] ${isDark ? 'text-dark-400' : 'text-gray-500'}`}>{user?.status}</p>
             </div>
@@ -210,14 +205,10 @@ export default function ChatList() {
           ) : (
             filteredChats.map(chat => (
               <div key={chat.id} onClick={() => setSelectedChat(chat)} className={`chat-item flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selectedChat?.id === chat.id ? 'active' : ''} ${isDark ? 'hover:bg-dark-800' : 'hover:bg-gray-100'}`}>
-                <div className="text-2xl flex-shrink-0">
-                  {chat.is_group ? '👥' : (getEmojiForUser(chat.member_id, chat.emoji) || '🕊️')}
-                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>
                       {chat.is_group ? chat.name : chat.members}
-                      {!chat.is_group && <span className="text-base ml-1">{getEmojiForUser(chat.member_id, chat.emoji) || '🕊️'}</span>}
                     </h3>
                     <span className={`text-xs flex-shrink-0 ml-2 ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>{formatTime(chat.last_message_at)}</span>
                   </div>

@@ -389,12 +389,18 @@ app.get('/api/chats', authenticateToken, apiLimiter, (req, res) => {
       (SELECT username FROM users WHERE id = (SELECT user_id FROM messages WHERE chat_id = c.id ORDER BY created_at DESC LIMIT 1)) as last_message_by,
       (SELECT GROUP_CONCAT(u.username) FROM users u
         JOIN chat_members cm ON u.id = cm.user_id
-        WHERE cm.chat_id = c.id AND cm.user_id != ?) as members
+        WHERE cm.chat_id = c.id AND cm.user_id != ?) as members,
+      (SELECT u.emoji FROM users u
+        JOIN chat_members cm ON u.id = cm.user_id
+        WHERE cm.chat_id = c.id AND cm.user_id != ? LIMIT 1) as member_emoji,
+      (SELECT u.id FROM users u
+        JOIN chat_members cm ON u.id = cm.user_id
+        WHERE cm.chat_id = c.id AND cm.user_id != ? LIMIT 1) as member_id
     FROM chats c
     JOIN chat_members cm ON c.id = cm.chat_id
     WHERE cm.user_id = ?
     ORDER BY last_message_at DESC
-  `, [req.user.id, req.user.id],
+  `, [req.user.id, req.user.id, req.user.id, req.user.id],
   (err, chats) => {
     if (err) return res.status(500).json({ error: 'Ошибка сервера' });
     // Decrypt last messages

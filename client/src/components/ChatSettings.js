@@ -6,7 +6,7 @@ import { API_URL } from '../config';
 
 export default function ChatSettings({ chat, onClose, onChatDeleted }) {
   const { user, token } = useAuth();
-  const { socket, emojiChanges } = useSocket();
+  const { socket } = useSocket();
   const { themeName } = useTheme();
   const isDark = themeName === 'dark';
   const [members, setMembers] = useState([]);
@@ -166,8 +166,7 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
             members.map(m => (
               <div key={m.id} className={`flex items-center justify-between py-2 px-2 rounded ${hoverBg}`}>
                 <div className="flex items-center gap-2">
-                  <div className="text-lg">{emojiChanges[m.id] || m.emoji || '🕊️'}</div>
-                  <span className={`${textColor} text-sm`}>{m.username} <span className="text-base">{emojiChanges[m.id] || m.emoji || '🕊️'}</span></span>
+                  <span className={`${textColor} text-sm`}>{m.username}</span>
                   {m.id === chat.created_by && <span className="text-xs text-primary-400">(создатель)</span>}
                 </div>
                 {(isCreator || m.id === user.id) && m.id !== chat.created_by && (
