@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { API_URL } from '../config';
+import { isDuplicateChat, sanitizeInput } from '../utils/helpers';
+import { getOrCreateKeyPair, savePeerPublicKey } from '../utils/crypto';
+import { saveChats as cacheChats, getChats as loadCachedChats } from '../utils/storage';
 import ChatView from './ChatView';
 import NewChatModal from './NewChatModal';
+import UserProfile from './UserProfile';
 
 export default function ChatList() {
   const { user, token, logout } = useAuth();
@@ -13,9 +17,17 @@ export default function ChatList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewChat, setShowNewChat] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [viewProfileUserId, setViewProfileUserId] = useState(null);
   const [status, setStatus] = useState(user?.status || '');
 
-  useEffect(() => { fetchChats(); }, []);
+  useEffect(() => {
+    (async () => {
+      const cached = await loadCachedChats();
+      if (cached.length > 0) setChats(cached);
+      fetchChats();
+      getOrCreateKeyPair();
+    })();
+  }, []);
 
   const fetchChats = async () => {
     try {
@@ -23,7 +35,10 @@ export default function ChatList() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      setChats(data);
+      if (Array.isArray(data)) {
+        setChats(data);
+        await cacheChats(data);
+      }
     } catch (error) {
       console.error('Error fetching chats:', error);
     }
@@ -34,12 +49,20 @@ export default function ChatList() {
       await fetch(`${API_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status: sanitizeInput(status) })
       });
       setShowProfile(false);
     } catch (error) {
       console.error('Error updating status:', error);
     }
+  };
+
+  const handleNewChat = (newChat) => {
+    if (isDuplicateChat(chats, (newChat.members || '').split(','))) {
+      return;
+    }
+    setChats((prev) => [newChat, ...prev]);
+    fetchChats();
   };
 
   const filteredChats = chats.filter(chat =>
@@ -61,12 +84,12 @@ export default function ChatList() {
     <div className="flex h-screen bg-dark-950">
       <div className={`${selectedChat ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 bg-dark-900 border-r border-dark-800`}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-dark-800">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setViewProfileUserId(user.id)}>
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
-                {user?.username?.charAt(0).toUpperCase()}
+              <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                {user?.avatar ? <img src={user.avatar} alt="" className="w-full h-full object-cover" /> : user?.username?.charAt(0).toUpperCase()}
               </div>
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-dark-900"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-dark-900" />
             </div>
             <div>
               <h2 className="font-semibold text-white">{user?.username}</h2>
@@ -113,7 +136,7 @@ export default function ChatList() {
           ) : (
             filteredChats.map(chat => (
               <div key={chat.id} onClick={() => setSelectedChat(chat)} className={`chat-item flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selectedChat?.id === chat.id ? 'active' : ''}`}>
-                <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
                   {chat.is_group ? (chat.name?.charAt(0).toUpperCase() || 'G') : (chat.members?.split(',')[0]?.charAt(0).toUpperCase() || '?')}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -121,9 +144,7 @@ export default function ChatList() {
                     <h3 className="font-medium text-white truncate">{chat.is_group ? chat.name : chat.members}</h3>
                     <span className="text-xs text-dark-500 flex-shrink-0 ml-2">{formatTime(chat.last_message_at)}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-dark-400 truncate">{chat.last_message || 'No messages yet'}</p>
-                  </div>
+                  <p className="text-sm text-dark-400 truncate">{chat.last_message || 'No messages yet'}</p>
                 </div>
               </div>
             ))
@@ -133,19 +154,22 @@ export default function ChatList() {
 
       {selectedChat ? (
         <div className="flex-1">
-          <ChatView chat={selectedChat} onBack={() => setSelectedChat(null)} />
+          <ChatView chat={selectedChat} onBack={() => setSelectedChat(null)} onShowProfile={(uid) => setViewProfileUserId(uid)} />
         </div>
       ) : (
         <div className="hidden lg:flex flex-1 items-center justify-center bg-dark-950">
           <div className="text-center text-dark-500">
             <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
             <h2 className="text-xl font-semibold">Secure Messenger</h2>
-            <p className="mt-2 text-sm">Select a chat or start a new conversation</p>
+            <p className="mt-2 text-sm">End-to-end encrypted messaging</p>
+            <p className="mt-1 text-xs text-dark-600">Select a chat or start a new conversation</p>
           </div>
         </div>
       )}
 
       {showNewChat && <NewChatModal onClose={() => { setShowNewChat(false); fetchChats(); }} />}
+
+      {viewProfileUserId && <UserProfile userId={viewProfileUserId} onClose={() => setViewProfileUserId(null)} />}
     </div>
   );
 }

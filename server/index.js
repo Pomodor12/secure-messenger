@@ -20,7 +20,21 @@ const io = new Server(server, {
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: blob:; connect-src 'self' ws: wss:; font-src 'self' data:;");
+  next();
+});
+
+function sanitize(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[<>&"'\/]/g, '').trim().slice(0, 500);
+}
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -95,9 +109,20 @@ function authenticateToken(req, res, next) {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const username = sanitize(req.body.username);
+    const email = sanitize(req.body.email);
+    const password = req.body.password;
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'All fields are required' });
+    }
+    if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      return res.status(400).json({ error: 'Username must be 3-30 chars, alphanumeric and underscore only' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     db.run('INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
