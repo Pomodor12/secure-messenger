@@ -106,9 +106,9 @@ export default function ChatList() {
     const d = new Date(dateStr);
     const now = new Date();
     if (d.toDateString() === now.toDateString()) {
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     }
-    return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   };
 
   return (
@@ -128,13 +128,13 @@ export default function ChatList() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => setShowNewChat(true)} className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors" title="New Chat">
+            <button onClick={() => setShowNewChat(true)} className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors" title="Новый чат">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             </button>
             <button onClick={() => setShowProfile(!showProfile)} className="p-2 text-dark-400 hover:text-white hover:bg-dark-800 rounded-lg transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </button>
-            <button onClick={logout} className="p-2 text-dark-400 hover:text-red-400 hover:bg-dark-800 rounded-lg transition-colors" title="Logout">
+            <button onClick={logout} className="p-2 text-dark-400 hover:text-red-400 hover:bg-dark-800 rounded-lg transition-colors" title="Выйти">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
             </button>
           </div>
@@ -142,10 +142,10 @@ export default function ChatList() {
 
         {showProfile && (
           <div className="p-4 border-b border-dark-800 bg-dark-800/50">
-            <label className="block text-sm font-medium text-dark-300 mb-1">Status</label>
+            <label className="block text-sm font-medium text-dark-300 mb-1">Статус</label>
             <div className="flex gap-2">
-              <input type="text" value={status} onChange={(e) => setStatus(e.target.value)} className="flex-1 px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Your status" />
-              <button onClick={updateStatus} className="px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm rounded-lg transition-colors">Save</button>
+              <input type="text" value={status} onChange={(e) => setStatus(e.target.value)} className="flex-1 px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Ваш статус" />
+              <button onClick={updateStatus} className="px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm rounded-lg transition-colors">Сохранить</button>
             </div>
           </div>
         )}
@@ -153,7 +153,7 @@ export default function ChatList() {
         <div className="p-3">
           <div className="relative">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-dark-800 border border-dark-700 rounded-xl text-white text-sm placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Search chats..." />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-dark-800 border border-dark-700 rounded-xl text-white text-sm placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Поиск чатов..." />
           </div>
         </div>
 
@@ -161,21 +161,21 @@ export default function ChatList() {
           {filteredChats.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-dark-400">
               <svg className="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-              <p className="text-sm">No chats found</p>
-              <p className="text-xs mt-1">Start a new conversation</p>
+              <p className="text-sm">Нет чатов</p>
+              <p className="text-xs mt-1">Начните новый разговор</p>
             </div>
           ) : (
             filteredChats.map(chat => (
               <div key={chat.id} onClick={() => setSelectedChat(chat)} className={`chat-item flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${selectedChat?.id === chat.id ? 'active' : ''}`}>
                 <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
-                  {chat.is_group ? (chat.name?.charAt(0).toUpperCase() || 'G') : (chat.members?.split(',')[0]?.charAt(0).toUpperCase() || '?')}
+                  {chat.is_group ? (chat.name?.charAt(0).toUpperCase() || 'Г') : (chat.members?.split(',')[0]?.charAt(0).toUpperCase() || '?')}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className="font-medium text-white truncate">{chat.is_group ? chat.name : chat.members}</h3>
                     <span className="text-xs text-dark-500 flex-shrink-0 ml-2">{formatTime(chat.last_message_at)}</span>
                   </div>
-                  <p className="text-sm text-dark-400 truncate">{chat.last_message || 'No messages yet'}</p>
+                  <p className="text-sm text-dark-400 truncate">{chat.last_message || 'Нет сообщений'}</p>
                 </div>
               </div>
             ))
@@ -204,9 +204,9 @@ export default function ChatList() {
         <div className="hidden lg:flex flex-1 items-center justify-center bg-dark-950">
           <div className="text-center text-dark-500">
             <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-            <h2 className="text-xl font-semibold">Secure Messenger</h2>
-            <p className="mt-2 text-sm">End-to-end encrypted messaging</p>
-            <p className="mt-1 text-xs text-dark-600">Select a chat or start a new conversation</p>
+            <h2 className="text-xl font-semibold">Голуби</h2>
+            <p className="mt-2 text-sm">Зашифрованный обмен сообщениями</p>
+            <p className="mt-1 text-xs text-dark-600">Выберите чат или начните новый разговор</p>
           </div>
         </div>
       )}

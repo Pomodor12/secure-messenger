@@ -8,7 +8,6 @@ export default function NewChatModal({ onClose }) {
   const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [chatName, setChatName] = useState('');
-  const [isGroup, setIsGroup] = useState(false);
 
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -46,8 +45,8 @@ export default function NewChatModal({ onClose }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          name: isGroup ? chatName : null,
-          isGroup: selectedUsers.length > 1 || isGroup,
+          name: selectedUsers.length > 1 ? chatName : null,
+          isGroup: selectedUsers.length > 1,
           memberIds: selectedUsers.map(u => u.id)
         })
       });
@@ -61,7 +60,7 @@ export default function NewChatModal({ onClose }) {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-dark-900 rounded-2xl w-full max-w-md border border-dark-800 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-800">
-          <h2 className="text-lg font-semibold text-white">New Chat</h2>
+          <h2 className="text-lg font-semibold text-white">Новый чат</h2>
           <button onClick={onClose} className="p-1 text-dark-400 hover:text-white rounded-lg">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -70,14 +69,14 @@ export default function NewChatModal({ onClose }) {
         <div className="p-6">
           {selectedUsers.length > 1 && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-dark-300 mb-1">Group Name</label>
-              <input type="text" value={chatName} onChange={(e) => setChatName(e.target.value)} className="w-full px-4 py-2.5 bg-dark-800 border border-dark-700 rounded-xl text-white text-sm placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Enter group name" />
+              <label className="block text-sm font-medium text-dark-300 mb-1">Название группы</label>
+              <input type="text" value={chatName} onChange={(e) => setChatName(e.target.value)} className="w-full px-4 py-2.5 bg-dark-800 border border-dark-700 rounded-xl text-white text-sm placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Введите название группы" autoFocus />
             </div>
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-dark-300 mb-1">Search Users</label>
-            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-2.5 bg-dark-800 border border-dark-700 rounded-xl text-white text-sm placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Type a username..." autoFocus />
+            <label className="block text-sm font-medium text-dark-300 mb-1">Поиск пользователей</label>
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full px-4 py-2.5 bg-dark-800 border border-dark-700 rounded-xl text-white text-sm placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Введите имя пользователя..." autoFocus />
           </div>
 
           {selectedUsers.length > 0 && (
@@ -108,14 +107,14 @@ export default function NewChatModal({ onClose }) {
               </div>
             ))}
             {searchQuery && users.length === 0 && (
-              <p className="text-center text-dark-500 py-4">No users found</p>
+              <p className="text-center text-dark-500 py-4">Пользователи не найдены</p>
             )}
           </div>
         </div>
 
         <div className="px-6 py-4 border-t border-dark-800">
           <button onClick={createChat} disabled={selectedUsers.length === 0} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            {selectedUsers.length > 1 ? `Create Group (${selectedUsers.length} members)` : 'Start Chat'}
+            {selectedUsers.length > 1 ? `Создать группу (${selectedUsers.length} чел.)` : 'Начать чат'}
           </button>
         </div>
       </div>

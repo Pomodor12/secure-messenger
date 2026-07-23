@@ -163,7 +163,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm('Delete this message?')) return;
+    if (!window.confirm('Удалить это сообщение?')) return;
     await fetch(`${API_URL}/api/chats/${chat.id}/messages/${messageId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
@@ -180,7 +180,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
     }
   };
 
-  const getChatName = () => chat.name || chat.members || 'Unknown';
+  const getChatName = () => chat.name || chat.members || 'Неизвестный';
   const typingUser = typingUsers[chat.id];
 
   return (
@@ -196,7 +196,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
           <div className="flex-1 text-left min-w-0">
             <h3 className="font-semibold text-white truncate">{getChatName()}</h3>
             <p className="text-xs text-dark-400 truncate">
-              {typingUser ? `${typingUser.username} is typing...` : (chat.is_group ? 'Group' : 'Online')}
+              {typingUser ? `${typingUser.username} печатает...` : (chat.is_group ? 'Группа' : 'В сети')}
             </p>
           </div>
         </button>
@@ -214,8 +214,8 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-dark-400">
             <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-            <p>No messages yet</p>
-            <p className="text-sm">Send the first message to start the conversation</p>
+            <p>Пока нет сообщений</p>
+            <p className="text-sm">Отправьте первое сообщение, чтобы начать разговор</p>
           </div>
         ) : (
           messages.map((msg, index) => {
@@ -235,7 +235,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                   <div className="group relative">
                     <div className={`px-4 py-2 rounded-2xl ${isOwn ? 'bg-primary-600 text-white rounded-br-md' : 'bg-dark-800 text-dark-100 rounded-bl-md'}`}>
                       {msg.message_type === 'image' ? (
-                        <img src={msg.content} alt="shared" className="rounded-lg max-w-full" />
+                        <img src={msg.content} alt="фото" className="rounded-lg max-w-full" />
                       ) : (
                         <p className="break-words">{msg.content}</p>
                       )}
@@ -247,7 +247,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
                     )}
                   </div>
                   <p className={`text-xs text-dark-500 mt-1 ${isOwn ? 'text-right mr-1' : 'ml-1'}`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
             type="text"
             value={newMessage}
             onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
-            placeholder="Type a message..."
+            placeholder="Введите сообщение..."
             className="flex-1 px-4 py-3 bg-dark-800 border border-dark-700 rounded-xl text-white placeholder-dark-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
           <button

@@ -27,7 +27,7 @@ export default function UserProfile({ userId, onClose }) {
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-dark-900 rounded-2xl w-full max-w-sm border border-dark-800 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-dark-800">
-          <h2 className="text-lg font-semibold text-white">{isOwn ? 'My Profile' : 'User Profile'}</h2>
+          <h2 className="text-lg font-semibold text-white">{isOwn ? 'Мой профиль' : 'Профиль пользователя'}</h2>
           <button onClick={onClose} className="p-1 text-dark-400 hover:text-white rounded-lg">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -59,14 +59,14 @@ export default function UserProfile({ userId, onClose }) {
             <h3 className="text-xl font-bold text-white mb-1">{profile.username}</h3>
 
             <div className="w-full bg-dark-800 rounded-xl p-4 mt-2">
-              <p className="text-xs text-dark-500 mb-1">Status</p>
-              <p className="text-sm text-dark-200">{profile.status || 'Hey, I am using Secure Messenger!'}</p>
+              <p className="text-xs text-dark-500 mb-1">Статус</p>
+              <p className="text-sm text-dark-200">{profile.status || 'Привет, я использую Голуби!'}</p>
             </div>
 
             <div className="w-full mt-3 bg-dark-800 rounded-xl p-4">
-              <p className="text-xs text-dark-500 mb-1">Online</p>
+              <p className="text-xs text-dark-500 mb-1">Онлайн</p>
               <p className={`text-sm ${isOnline ? 'text-green-400' : 'text-dark-400'}`}>
-                {isOnline ? 'Online' : 'Offline'}
+                {isOnline ? 'В сети' : 'Не в сети'}
               </p>
             </div>
           </div>

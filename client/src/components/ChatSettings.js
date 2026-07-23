@@ -49,7 +49,7 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
   };
 
   const handleDeleteChat = async () => {
-    if (!window.confirm('Delete this chat and all messages?')) return;
+    if (!window.confirm('Удалить этот чат и все сообщения?')) return;
     await fetch(`${API_URL}/api/chats/${chat.id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
@@ -78,7 +78,7 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
   };
 
   const handleLeave = async () => {
-    if (!window.confirm('Leave this group?')) return;
+    if (!window.confirm('Покинуть эту группу?')) return;
     await fetch(`${API_URL}/api/chats/${chat.id}/leave`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` }
@@ -96,12 +96,12 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
     return (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
         <div className="bg-dark-900 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-          <h2 className="text-lg font-semibold text-white mb-4">Chat Info</h2>
+          <h2 className="text-lg font-semibold text-white mb-4">Информация о чате</h2>
           <div className="text-dark-300 mb-4">
-            <p>Members: {chat.members}</p>
+            <p>Участники: {chat.members}</p>
           </div>
-          <button onClick={handleDeleteChat} className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg mb-2">Delete Chat</button>
-          <button onClick={onClose} className="w-full py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg">Close</button>
+          <button onClick={handleDeleteChat} className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg mb-2">Удалить чат</button>
+          <button onClick={onClose} className="w-full py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg">Закрыть</button>
         </div>
       </div>
     );
@@ -111,7 +111,7 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-dark-900 rounded-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-white">Group Settings</h2>
+          <h2 className="text-lg font-semibold text-white">Настройки группы</h2>
           <button onClick={onClose} className="text-dark-400 hover:text-white">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -121,21 +121,21 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
           {renaming ? (
             <div className="flex gap-2">
               <input value={newName} onChange={e => setNewName(e.target.value)} className="flex-1 px-3 py-2 bg-dark-800 border border-dark-700 rounded-lg text-white" autoFocus />
-              <button onClick={handleRename} className="px-3 py-2 bg-primary-600 text-white rounded-lg">Save</button>
-              <button onClick={() => setRenaming(false)} className="px-3 py-2 bg-dark-700 text-white rounded-lg">Cancel</button>
+              <button onClick={handleRename} className="px-3 py-2 bg-primary-600 text-white rounded-lg">Сохранить</button>
+              <button onClick={() => setRenaming(false)} className="px-3 py-2 bg-dark-700 text-white rounded-lg">Отмена</button>
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <span className="text-dark-300">{chat.name || 'Unnamed group'}</span>
-              {isCreator && <button onClick={() => setRenaming(true)} className="text-primary-400 hover:text-primary-300 text-sm">Rename</button>}
+              <span className="text-dark-300">{chat.name || 'Без названия'}</span>
+              {isCreator && <button onClick={() => setRenaming(true)} className="text-primary-400 hover:text-primary-300 text-sm">Переименовать</button>}
             </div>
           )}
         </div>
 
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-dark-300">Members ({members.length})</span>
-            <button onClick={() => setInviteMode(!inviteMode)} className="text-primary-400 hover:text-primary-300 text-sm">+ Invite</button>
+            <span className="text-sm font-medium text-dark-300">Участники ({members.length})</span>
+            <button onClick={() => setInviteMode(!inviteMode)} className="text-primary-400 hover:text-primary-300 text-sm">+ Пригласить</button>
           </div>
 
           {inviteMode && (
@@ -146,12 +146,12 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
                   <span className="text-white text-sm">{u.username}</span>
                 </label>
               ))}
-              <button onClick={handleInvite} disabled={selectedInvite.length === 0} className="mt-2 w-full py-1.5 bg-primary-600 text-white rounded-lg text-sm disabled:opacity-50">Add Selected</button>
+              <button onClick={handleInvite} disabled={selectedInvite.length === 0} className="mt-2 w-full py-1.5 bg-primary-600 text-white rounded-lg text-sm disabled:opacity-50">Добавить</button>
             </div>
           )}
 
           {loading ? (
-            <div className="text-dark-400 text-sm">Loading...</div>
+            <div className="text-dark-400 text-sm">Загрузка...</div>
           ) : (
             members.map(m => (
               <div key={m.id} className="flex items-center justify-between py-2 px-2 hover:bg-dark-800 rounded">
@@ -160,11 +160,11 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
                     {m.avatar ? <img src={m.avatar} alt="" className="w-8 h-8 rounded-full" /> : m.username?.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-white text-sm">{m.username}</span>
-                  {m.id === chat.created_by && <span className="text-xs text-primary-400">(creator)</span>}
+                  {m.id === chat.created_by && <span className="text-xs text-primary-400">(создатель)</span>}
                 </div>
                 {(isCreator || m.id === user.id) && m.id !== chat.created_by && (
                   <button onClick={() => handleRemoveMember(m.id)} className="text-red-400 hover:text-red-300 text-xs">
-                    {m.id === user.id ? 'Leave' : 'Remove'}
+                    {m.id === user.id ? 'Выйти' : 'Удалить'}
                   </button>
                 )}
               </div>
@@ -173,9 +173,9 @@ export default function ChatSettings({ chat, onClose, onChatDeleted }) {
         </div>
 
         <div className="flex gap-2">
-          {!isCreator && <button onClick={handleLeave} className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg">Leave Group</button>}
-          {isCreator && <button onClick={handleDeleteChat} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">Delete Group</button>}
-          <button onClick={onClose} className="flex-1 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg">Close</button>
+          {!isCreator && <button onClick={handleLeave} className="flex-1 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg">Покинуть группу</button>}
+          {isCreator && <button onClick={handleDeleteChat} className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">Удалить группу</button>}
+          <button onClick={onClose} className="flex-1 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-lg">Закрыть</button>
         </div>
       </div>
     </div>
