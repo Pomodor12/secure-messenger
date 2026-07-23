@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
-import { getOrCreateKeyPair, getPeerPublicKey, encryptMessage, decryptMessage, savePeerPublicKey } from '../utils/crypto';
+import { getOrCreateKeyPair } from '../utils/crypto';
 import { saveMessage, getMessagesByChatId } from '../utils/storage';
 import { compressImage, sanitizeInput } from '../utils/helpers';
 import ChatSettings from './ChatSettings';
@@ -38,20 +38,7 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
             headers: { Authorization: `Bearer ${token}` }
           });
           const data = await res.json();
-          const decrypted = await Promise.all(data.map(async (msg) => {
-            if (msg.encrypted_content && msg.iv) {
-              const peerKey = getPeerPublicKey(msg.user_id);
-              if (peerKey && keyPairRef.current) {
-                const content = msg.user_id === user.id
-                  ? decryptMessage(msg.encrypted_content, msg.iv, peerKey, keyPairRef.current.secretKey)
-                  : decryptMessage(msg.encrypted_content, msg.iv, peerKey, keyPairRef.current.secretKey);
-                if (content) return { ...msg, content };
-              }
-            }
-            return msg;
-          }));
-          setMessages(decrypted);
-          await saveMessages(decrypted);
+          setMessages(data);
         } catch (e) {
           console.error('Load messages error:', e);
         }
@@ -65,13 +52,6 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
       socket.emit('join_chat', chat.id);
       const handleMessage = async (message) => {
         if (message.chat_id === chat.id) {
-          if (message.encrypted_content && message.iv) {
-            const peerKey = getPeerPublicKey(message.user_id);
-            if (peerKey && keyPairRef.current) {
-              const content = decryptMessage(message.encrypted_content, message.iv, peerKey, keyPairRef.current.secretKey);
-              if (content) message = { ...message, content };
-            }
-          }
           setMessages((prev) => {
             if (prev.some((m) => m.id === message.id)) return prev;
             return [...prev, message];
@@ -127,15 +107,6 @@ export default function ChatView({ chat, onBack, onShowProfile, onChatUpdated })
       content,
       messageType,
     };
-
-    const recipientKey = getPeerPublicKey(chat.members?.split(',')[0]?.trim());
-    if (recipientKey && keyPairRef.current) {
-      const encrypted = encryptMessage(content, recipientKey, keyPairRef.current.secretKey);
-      if (encrypted) {
-        payload.encryptedContent = encrypted.encrypted;
-        payload.iv = encrypted.nonce;
-      }
-    }
 
     socket.emit('send_message', payload);
     socket.emit('stop_typing', { chatId: chat.id });
