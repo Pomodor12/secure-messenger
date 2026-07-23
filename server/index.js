@@ -129,7 +129,7 @@ app.post('/api/auth/register', async (req, res) => {
           }
           return res.status(500).json({ error: 'Database error' });
         }
-        const token = jwt.sign({ id: this.lastID, username }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: this.lastID, username }, process.env.JWT_SECRET, { expiresIn: '365d' });
         res.json({ token, user: { id: this.lastID, username } });
       });
   } catch (error) {
@@ -147,7 +147,7 @@ app.post('/api/auth/login', async (req, res) => {
         if (!user) return res.status(400).json({ error: 'User not found' });
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) return res.status(400).json({ error: 'Invalid password' });
-        const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '365d' });
         res.json({
           token,
           user: { id: user.id, username: user.username, avatar: user.avatar, status: user.status }
