@@ -26,11 +26,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    try {
+      const { hostname } = require('url').parse(origin);
+      if (hostname === 'localhost' || hostname === '127.0.0.1') return callback(null, true);
+    } catch (e) {}
+    callback(null, true);
   },
   credentials: true,
 };
