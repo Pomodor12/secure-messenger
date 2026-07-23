@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import { API_URL } from '../config';
 import ChatView from './ChatView';
 import NewChatModal from './NewChatModal';
 
@@ -18,7 +19,7 @@ export default function ChatList() {
 
   const fetchChats = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/chats`, {
+      const res = await fetch(`${API_URL}/api/chats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -30,7 +31,7 @@ export default function ChatList() {
 
   const updateStatus = async () => {
     try {
-      await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/auth/profile`, {
+      await fetch(`${API_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status })

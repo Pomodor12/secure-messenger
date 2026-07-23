@@ -8,6 +8,11 @@ const jwt = require('jsonwebtoken');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'default_secret_change_me_in_production';
+  console.warn('WARNING: JWT_SECRET not set, using default. Set JWT_SECRET env var!');
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {

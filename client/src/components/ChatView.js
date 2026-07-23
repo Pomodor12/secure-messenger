@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 export default function ChatView({ chat, onBack }) {
   const { user, token } = useAuth();
@@ -14,7 +15,7 @@ export default function ChatView({ chat, onBack }) {
   useEffect(() => {
     if (chat) {
       setLoading(true);
-      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/chats/${chat.id}/messages`, {
+      fetch(`${API_URL}/api/chats/${chat.id}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())

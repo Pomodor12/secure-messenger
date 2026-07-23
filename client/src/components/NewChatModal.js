@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 export default function NewChatModal({ onClose }) {
   const { token } = useAuth();
@@ -20,7 +21,7 @@ export default function NewChatModal({ onClose }) {
 
   const searchUsers = async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/users/search?q=${searchQuery}`, {
+      const res = await fetch(`${API_URL}/api/users/search?q=${searchQuery}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -41,7 +42,7 @@ export default function NewChatModal({ onClose }) {
   const createChat = async () => {
     if (selectedUsers.length === 0) return;
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/chats`, {
+      const res = await fetch(`${API_URL}/api/chats`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
